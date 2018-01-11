@@ -285,7 +285,7 @@ void Z3Solver::minimize_select_variables_recursion(vector<string> conditions, st
 			minimize_select_variables_recursion(conditions, assertion);
 		}
 	}
-
+}
 
 /**
  * @brief Build an assertion which only allows a certain number of select variables to be enabled by Z3
@@ -302,7 +302,6 @@ string Z3Solver::minimize_select_variables (vector<string> conditions, size_t co
 	return assertion;
 }
 
-
 void Z3Solver::dump_conditions(FILE* file){
 
 	for( vector<Z3Variable>::iterator it = conditions.begin(); it != conditions.end(); it++ ){
@@ -316,8 +315,8 @@ void Z3Solver::dump_conditions(FILE* file){
 	  cout << "Active Select Variables detected:" << endl;
 	  copy(ite_conditions.begin(), ite_conditions.end(), ostream_iterator<string> (cout, "\n"));
 	}
-	
-	fprintf(file, "%s\n", minimize_select_variables(unique_ite_conditions, 1).c_str());
+	size_t activated_select_variables = stoi((options->cmd_option_str("activated_select_variables")));
+	fprintf(file, "%s\n", minimize_select_variables(unique_ite_conditions, activated_select_variables).c_str());
 }
 
 void Z3Solver::dump_check_sat(FILE* file){
