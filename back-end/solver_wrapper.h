@@ -27,6 +27,8 @@
 #include <set>
 #include <map>
 #include <vector>
+#include <algorithm>
+#include <iterator>
 #include "variable.h"
 
 
@@ -170,6 +172,7 @@ protected:
 	set<string> forced_free_vars;
 	map<string, string> first_content_value;
 	vector<bool> path_stack;
+	set<string> ite_conditions;
 	bool debug;
 
 	int minval(string type);

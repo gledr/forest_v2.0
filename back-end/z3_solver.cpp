@@ -261,7 +261,7 @@ void Z3Solver::cast_instruction_content(string src, string dst, string type_src,
 		//setcontent(dst, "(to_real " + content(src) + ")" );
 
 	//if( z3_type(type_src) == "Real" && z3_type(type_dst) == "Int" )
-		//setcontent(dst, "(to_int " + content(src) + ")" );
+		//setcontent(dst, "(to_int " + content(src) + ")" );z
 	
 	//printf("real_and_expr_z3solver %s %s\n", realvalue(dst).c_str(), eval(content_smt(dst)).c_str() );
 	//printf("real_and_expr_z3solver %s\n", realvalue(dst).c_str() );
@@ -270,14 +270,54 @@ void Z3Solver::cast_instruction_content(string src, string dst, string type_src,
 	
 }
 
+/**
+ * @brief Recursive function to be called by mimimize_select_variables
+ * @param conditions All conditions which have not been used already as vector
+ * @param assertion The build assertion as reference type to be build by recursive calls of the function
+ *
+ * @return void
+ */
+void Z3Solver::minimize_select_variables_recursion(vector<string> conditions, string & assertion){
+	if(!conditions.empty()){
+		assertion += "(ite " + conditions.front() + " 1 0)";
+		conditions.erase(conditions.begin());
+		if(!conditions.empty()){
+			minimize_select_variables_recursion(conditions, assertion);
+		}
+	}
+
+
+/**
+ * @brief Build an assertion which only allows a certain number of select variables to be enabled by Z3
+ * @param conditions All used If-Then-Else conditions as a unique vector
+ * @param max_activated_sel_vars Number of select variables which are allowed to be activated in total
+ *
+ * @return Assertion in SMT2 format to be used in the textual representation 
+ */
+string Z3Solver::minimize_select_variables (vector<string> conditions, size_t const max_activated_sel_vars){
+	string assertion = "(assert (<= (+ ";
+	minimize_select_variables_recursion(conditions, assertion);
+	assertion += ") " + to_string(max_activated_sel_vars) + " ))";
+	cout << assertion << std::endl;
+	return assertion;
+}
+
 
 void Z3Solver::dump_conditions(FILE* file){
-
 
 	for( vector<Z3Variable>::iterator it = conditions.begin(); it != conditions.end(); it++ ){
 		fprintf(file,"(assert %s)\n",it->content.c_str() );
 	}
 	
+	vector<string> unique_ite_conditions;
+	copy(ite_conditions.begin(), ite_conditions.end(), back_inserter(unique_ite_conditions));
+
+	if (debug){
+	  cout << "Active Select Variables detected:" << endl;
+	  copy(ite_conditions.begin(), ite_conditions.end(), ostream_iterator<string> (cout, "\n"));
+	}
+	
+	fprintf(file, "%s\n", minimize_select_variables(unique_ite_conditions, 1).c_str());
 }
 
 void Z3Solver::dump_check_sat(FILE* file){
@@ -632,13 +672,11 @@ void Z3Solver::binary_instruction_content(string dst, string op1, string op2, st
 
 void Z3Solver::ite_instruction_content(string dst, string condition, string op1, string op2){
 
-
 	stringstream content_ss;
-
+	ite_conditions.insert(content(condition));	
 	content_ss << "(ite " << content(condition) << " " << content(op1) << " " << content(op2) << ")";
 
 	variables[dst].content = content_ss.str();
-
 }
 
 void Z3Solver::setcontent(string varname, string content){
@@ -1489,10 +1527,8 @@ void Z3Solver::add_lt(string name, string value){
 void Z3Solver::dump_conditions(stringstream& sstream){
 
 	for( vector<Z3Variable>::iterator it = conditions.begin(); it != conditions.end(); it++ ){
-		sstream << it->content;
+	  sstream << it->content;
 	}
-	
-
 }
 
 string Z3Solver::get_comma_stack_conditions(){

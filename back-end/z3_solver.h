@@ -148,14 +148,15 @@ protected:
 	void right_shift(string op1, string op2, string dst, stringstream& content_ss);
 	void left_shift(string op1, string op2, string dst, stringstream& content_ss);
 
-
-
-
 	bool need_for_dump(string name, string content);
 	void dump_tail(FILE* file);
 	void dump_get(FILE* file);
 	void dump_conditions(FILE* file);
-	
+
+ private:
+	void minimize_select_variables_recursion(vector<string> conditions, string & assertion);
+	string minimize_select_variables (vector<string> conditions, size_t const max_activated_sel_vars);
+
 };
 
 #endif /* end of include guard: _SOLVER_H_ */
