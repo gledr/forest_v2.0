@@ -4611,6 +4611,10 @@ struct SelectVariables: public ModulePass {
 	blk_iterator(bb, in){
 
 	  if(BinaryOperator::classof(in)){
+#ifdef DEBUG
+	    errs () << "Binary Operator Detected!\n";
+	    errs () << *in << "\n";
+#endif
 	    // Search in the extracted data by loop_latch_info if the binary instruction is part of a loop latch.
 	    // Iff it is part of a loop latch we are not inserting select variables, since this would end up in an endless loop
 	    // as the SAT solver can insert arbitrary values and the loop will never terminate
@@ -4626,7 +4630,7 @@ struct SelectVariables: public ModulePass {
 	      LoadInst* enable = new LoadInst(enable_ptr,"",insertpos);
 	      LoadInst* val = new LoadInst(val_ptr,"",insertpos);
 	      
-	      SelectInst * SelectInstruction =  SelectInst::Create (enable,in ,val, "select_result", insertpos);
+	      SelectInst * SelectInstruction =  SelectInst::Create (enable,val, in, "select_result", insertpos);
 
 	      // As we manipulate the result of a binary instruction we also have to make sure, that our introduces result
 	      // ends up in the indtended register!
@@ -4642,6 +4646,12 @@ struct SelectVariables: public ModulePass {
 	    errs () << "Value ID: " << in->getValueID() << "\n";
 	    errs () << "Address" << in << "\n";
 #endif	   
+	  }
+	  else if (ICmpInst::classof(in)){
+#ifdef DEBUG
+	    errs () << "Compare Instruction Detected!\n";
+	    errs () << *in << "\n";
+#endif
 	  }
 	}
       }
