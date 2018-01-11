@@ -315,6 +315,11 @@ void Z3Solver::dump_conditions(FILE* file){
 	  cout << "Active Select Variables detected:" << endl;
 	  copy(ite_conditions.begin(), ite_conditions.end(), ostream_iterator<string> (cout, "\n"));
 	}
+
+	for(vector<string>::iterator itor = unique_ite_conditions.begin(); itor != unique_ite_conditions.end(); ++itor){
+	  fprintf(file, "(assert-soft (not %s))\n", itor->c_str());
+	}
+
 	size_t activated_select_variables = stoi((options->cmd_option_str("activated_select_variables")));
 	fprintf(file, "%s\n", minimize_select_variables(unique_ite_conditions, activated_select_variables).c_str());
 }
