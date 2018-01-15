@@ -455,11 +455,14 @@ string Z3Solver::minimize_select_variables (vector<string> conditions, size_t co
 
 void Z3Solver::dump_conditions(FILE* file){
 
-	for( vector<Z3Variable>::iterator it = conditions.begin(); it != conditions.end(); it++ ){
-		fprintf(file,"(assert %s)\n",it->content.c_str() );
-	}
+  for( vector<Z3Variable>::iterator it = conditions.begin(); it != conditions.end(); it++ ){
+	fprintf(file,"(assert %s)\n",it->content.c_str() );
+  }
 	
-	vector<string> unique_ite_conditions;
+  vector<string> unique_ite_conditions;
+  if(ite_conditions.empty()){
+	return;
+  } else {
 	copy(ite_conditions.begin(), ite_conditions.end(), back_inserter(unique_ite_conditions));
 
 	if (debug){
@@ -473,6 +476,7 @@ void Z3Solver::dump_conditions(FILE* file){
 
 	size_t activated_select_variables = stoi((options->cmd_option_str("activated_select_variables")));
 	fprintf(file, "%s\n", minimize_select_variables(unique_ite_conditions, activated_select_variables).c_str());
+  }
 }
 
 void Z3Solver::dump_check_sat(FILE* file){
