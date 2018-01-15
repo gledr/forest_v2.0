@@ -215,6 +215,8 @@ void Z3Solver::solve_problem_all_sat () {
   } else {
 	// Start timer
 	timer->start_timer();
+	int max_depth =  options->cmd_option_int("max_depth");
+	printf("Max Depth %d\n", max_depth);
 	size_t solutions = 0;
 	string filename;
 	vector<string> assertions;
@@ -225,7 +227,11 @@ void Z3Solver::solve_problem_all_sat () {
 	options->read_options();
 	get_name(filename);
 	printf("%s\n", filename.c_str());
+	fstream result;
+	string file_name = itos(current_problem_number) + "_results.txt";
+	result.open(file_name,std::ios::out);
 	do {
+	  result << "Solution #" << solutions << std::endl;
 	  filename = itos(solutions) + orig_filename;
 	  dump_problem_all_sat(filename, assertions);
 	  debug && printf("\e[31m filename solve problem \e[0m %s\n", filename.c_str());
@@ -284,7 +290,8 @@ void Z3Solver::solve_problem_all_sat () {
 		string varname = it->name;
 		string value = canonical_representation(result_get(*it_ret));
 		string hint = it->position;
-		
+
+		result << hint << " " << value << std::endl;
 		
 		debug && printf("\e[32m name \e[0m %s \e[32m hint \e[0m %s \e[32m value \e[0m %s\n", varname.c_str(), hint.c_str(), value.c_str() ); fflush(stdout);
 		pair<string,string> tmp;
@@ -295,6 +302,7 @@ void Z3Solver::solve_problem_all_sat () {
 		  tmp.second = "((_ int2bv 32) " + value + " )";
 		}
 		insert_as_assertions.insert(tmp);
+		
 		
 		set_real_value_mangled(varname, value);
 		
@@ -357,9 +365,9 @@ void Z3Solver::solve_problem_all_sat () {
 	  solutions++;
 	  printf("Solutions: %d\n", solutions);
 	  copy (assertions.begin(), assertions.end(), ostream_iterator<string>(cout, "\n"));
-	  sleep(5);
-	} while (sat);
+	} while (sat && solutions < max_depth);
 
+	result.close();
 	// TODO Write Results found into database or whereever they belong to!!
 	// End Timer
 	timer->end_timer("solver");

@@ -212,6 +212,7 @@ void load_default_options(){
 	options["stack_step"] = "10";
 	options["activated_select_variables"] = "1";
 	options["allsat"] = "1";
+	options["max_depth"] = "10";
 
 	if(string(getenv("FOREST_HOME")) != "")
 		set_option("base_path", string(getenv("FOREST_HOME")));
