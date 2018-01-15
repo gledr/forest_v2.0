@@ -57,6 +57,7 @@ protected:
 	void replace_right_shift(string& condition);
 	void replace_left_shift(string& condition);
 	void dump_problem(string& filename_base);
+	void dump_problem_all_sat(string& filename_base, vector<string> & assertions);
 	string or_constant(string op1, string op2);
 	string complement_op(string op1);
 	void dump_extra(FILE* file);

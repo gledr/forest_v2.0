@@ -62,6 +62,31 @@ void Z3BitVector::dump_problem(string& filename_base){
 
 }
 
+void Z3BitVector::dump_problem_all_sat (string & filename_base, vector<string> & assertions){
+  // TODO Make one function out of dump_problem and this one!!
+  printf("Dump Problem AllSat\n");
+	for( set<NameAndPosition>::iterator it = free_variables.begin(); it != free_variables.end(); it++ ){
+		internal_condition(it->position).c_str();
+	}
+	for( map<string,Z3Variable>::iterator it = variables.begin(); it != variables.end(); it++ ){
+		if(!need_for_dump(it->first, it->second.content)) continue;
+		internal_condition(it->second.content);
+	}
+
+	FILE* file = fopen(filename_base.c_str(), "w");
+	dump_header(file);
+	dump_variables(file);
+	dump_extra(file);
+	dump_conditions(file);
+	for(vector<string>::iterator itor = assertions.begin(); itor != assertions.end(); itor++){
+	  fprintf(file, "%s\n", itor->c_str());
+	}
+	dump_check_sat(file);
+	dump_get(file);
+	dump_tail(file);
+	fclose(file);
+}
+
 void Z3BitVector::dump_header(FILE* file){
 
 	fprintf(file,"(set-option :produce-models true)\n");

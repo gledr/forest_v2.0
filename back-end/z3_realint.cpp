@@ -66,6 +66,10 @@ void Z3RealInt::dump_problem(string& filename_base){
 
 }
 
+void Z3RealInt::dump_problem_all_sat (string & filename_base, vector<string> & assertions){
+  assert (0 && "Function not implemented!\n");
+}
+
 void Z3RealInt::dump_header(FILE* file){
 
 	fprintf(file,"(set-option :produce-models true)\n");

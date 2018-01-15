@@ -123,6 +123,7 @@ protected:
 	void remv_op_constant(string& condition);
 	virtual string internal_condition(string condition) = 0;
 	virtual void dump_problem(string& filename) = 0;
+	virtual void dump_problem_all_sat(string & filename, vector<string> & assertions) = 0;
 	virtual string internal_representation(int in, string type) = 0;
 	virtual void dump_extra(FILE* file) = 0;
 	virtual void dump_header(FILE* file) = 0;
@@ -156,6 +157,8 @@ protected:
  private:
 	void minimize_select_variables_recursion(vector<string> conditions, string & assertion);
 	string minimize_select_variables (vector<string> conditions, size_t const max_activated_sel_vars);
+   	void solve_problem_single_solution ();
+	void solve_problem_all_sat ();
 
 };
 

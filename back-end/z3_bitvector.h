@@ -44,6 +44,7 @@ protected:
 	void change_cast(string& condition);
 	void representation_constants(string& condition);
 	void dump_problem(string& filename_base);
+	void dump_problem_all_sat(string & filename_base, vector<string> & assertions);
 	void dump_variables(FILE* file);
 	void dump_extra(FILE* file);
 	void dump_header(FILE* file);

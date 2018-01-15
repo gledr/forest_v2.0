@@ -62,6 +62,16 @@ bool Z3Solver::check_representable(){
 
 void Z3Solver::solve_problem(){
 
+  if (options->cmd_option_str("allsat") == "1"){
+	debug && printf ("Solving AllSAT Problem\n");
+	solve_problem_all_sat ();
+  } else {
+	debug && printf ("Solving Problem (single solution)\n");
+	solve_problem_single_solution();
+  }
+}
+
+void Z3Solver::solve_problem_single_solution () { 
 	//check for max_depth
 	if(options->cmd_option_str("max_depth") != "" && conditions.size()-1 > options->cmd_option_int("max_depth")){
 		sat = 0;
@@ -104,14 +114,7 @@ void Z3Solver::solve_problem(){
 	command << "z3_timed 60 " << filename;
 	command << " > " << tmp_file("z3_output");
 
-
-
-
 	system(command.str().c_str());
-
-
-
-
 
 	ifstream input(tmp_file("z3_output").c_str());
 	string line;
@@ -135,18 +138,6 @@ void Z3Solver::solve_problem(){
 	debug && printf("\e[31m problem solved \e[0m\n" );
 
 
-	if(options->cmd_option_bool("rm_z3_queries")){
-		system(("rm -f " + filename).c_str());
-		system("rm -f z3_output");
-	}
-
-
-
-	// if unsat then return 
-	if(!sat){
-		timer->end_timer("solver");
-		return;
-	}
 
 
 	bool sat = 0;
@@ -215,6 +206,166 @@ void Z3Solver::solve_problem(){
 	// end timer
 	timer->end_timer("solver");
 }
+
+void Z3Solver::solve_problem_all_sat () {
+  // check for max_depth
+  if (options->cmd_option_str("max_depth") != "" && conditions.size()-1 > options->cmd_option_int("max_depth")){
+	sat = 0;
+	return;
+  } else {
+	// Start timer
+	timer->start_timer();
+	size_t solutions = 0;
+	string filename;
+	vector<string> assertions;
+	int current_problem_number = database->get_problem_num();
+	set<pair<string,string>> insert_as_assertions;
+	filename = "z3_" + itos(current_problem_number) + ".smt2";
+	string orig_filename = filename;
+	options->read_options();
+	get_name(filename);
+	printf("%s\n", filename.c_str());
+	do {
+	  filename = itos(solutions) + orig_filename;
+	  dump_problem_all_sat(filename, assertions);
+	  debug && printf("\e[31m filename solve problem \e[0m %s\n", filename.c_str());
+	  
+	  stringstream command;
+	  command << "z3_timed 60 " << filename;
+	  command << " > " << tmp_file("z3_output");
+	  system(command.str().c_str());
+	  
+	  ifstream input(tmp_file("z3_output").c_str());
+	  string line;
+	  vector<string> ret_vector;
+	  while( getline( input, line )) {
+		ret_vector.push_back(line);
+	  }
+	  
+	  string sat_str = ret_vector[0];
+	  
+	  if(sat_str.find("error") != string::npos ){
+		printf("error_in_z3 %s\n", sat_str.c_str());
+		if(isdriver) {
+		  assert(0 && "Error in z3 execution");
+		}
+	  }
+	  if(sat_str.find("unknown") != string::npos ){
+		printf("Warning: unknown sat\n");
+	  }
+	  
+	  // get sat or unsat
+	  sat = get_is_sat(sat_str);
+	  
+	  debug && printf("\e[31m problem solved \e[0m\n" );
+
+	  if(options->cmd_option_bool("rm_z3_queries")){
+		system(("rm -f " + filename).c_str());
+		system("rm -f z3_output");
+	  }
+	  
+	  // if unsat then return 
+	  if(!sat){
+		timer->end_timer("solver");
+		return;
+	  }
+
+	  // set values for free_variables (varname, hint and value)
+	  
+	  vector<string>::iterator       it_ret = ret_vector.begin(); it_ret++;
+	  set<NameAndPosition> free_variables_aux;
+	  
+	  for( set<NameAndPosition>::iterator it = free_variables.begin(); it != free_variables.end(); it++,it_ret++ ){
+		  
+		string line = *it_ret;
+		if(line.find("error") != string::npos )
+		  if(isdriver) assert(0 && "Error in z3 execution");
+		
+		string varname = it->name;
+		string value = canonical_representation(result_get(*it_ret));
+		string hint = it->position;
+		
+		
+		debug && printf("\e[32m name \e[0m %s \e[32m hint \e[0m %s \e[32m value \e[0m %s\n", varname.c_str(), hint.c_str(), value.c_str() ); fflush(stdout);
+		pair<string,string> tmp;
+		tmp.first = hint;
+		if(value.find("true") != string::npos || value.find("false") != string::npos){
+		  tmp.second = value;
+		} else {
+		  tmp.second = "((_ int2bv 32) " + value + " )";
+		}
+		insert_as_assertions.insert(tmp);
+		
+		set_real_value_mangled(varname, value);
+		
+		NameAndPosition nandp = {varname, hint, value};
+		free_variables_aux.insert(nandp);
+		//it->value = value;
+		//set_real_value_hint(hint, value);
+		//variables[varname].real_value = value;
+		
+	  }
+
+	  free_variables = free_variables_aux;
+
+	  // set values for variables (name and value)
+
+	  for( map<string,Z3Variable>::iterator it = variables.begin(); it != variables.end(); it++ ){
+
+		if(!need_for_dump(it->first, it->second.content)) continue;
+
+		string line = *it_ret;
+		if(line.find("error") != string::npos )
+		  if(isdriver) assert(0 && "Error in z3 execution");
+
+		string name = it->first;
+		string value = canonical_representation(result_get(*it_ret));
+
+
+		debug && printf("\e[32m name \e[0m %s \e[32m value \e[0m %s\n", name.c_str(), value.c_str() ); fflush(stdout);
+	
+		set_real_value_mangled(name, value);
+		//variables[name].real_value = value;
+
+		it_ret++;
+	  }
+
+	  // set values for first_content
+
+	  for( map<string,string>::iterator it = first_content.begin(); it != first_content.end(); it++ ){
+		set_first_content_value(it->first, canonical_representation(result_get(*it_ret)));
+
+		it_ret++;
+	  }
+
+	  vector<string> prepare_assertions;
+	  for (set<pair<string,string>>::iterator itor = insert_as_assertions.begin(); itor != insert_as_assertions.end(); ++itor){
+		string tmp = "(not (= " + itor->first + " " + itor->second + "))";
+		prepare_assertions.push_back(tmp);
+	  }
+	  string assertion = "(assert ( or ";
+	  for(vector<string>::iterator itor = prepare_assertions.begin(); itor != prepare_assertions.end(); ++itor){
+		assertion += *itor;
+	  }
+	  assertion += "))";
+	  assertions.push_back(assertion);
+	  insert_as_assertions.clear();
+	
+	  string rm_cmd = "rm " + filename;
+	  system(rm_cmd.c_str());
+
+	  solutions++;
+	  printf("Solutions: %d\n", solutions);
+	  copy (assertions.begin(), assertions.end(), ostream_iterator<string>(cout, "\n"));
+	  sleep(5);
+	} while (sat);
+
+	// TODO Write Results found into database or whereever they belong to!!
+	// End Timer
+	timer->end_timer("solver");
+  }
+}
+
 
 string Z3Solver::result_get(string get_str){
 
