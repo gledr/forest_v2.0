@@ -213,10 +213,10 @@ void Z3Solver::solve_problem_all_sat () {
 	sat = 0;
 	return;
   } else {
-	// Start timer
+   	// Start timer
 	timer->start_timer();
 	int max_depth =  options->cmd_option_int("max_depth");
-	printf("Max Depth %d\n", max_depth);
+
 	size_t solutions = 0;
 	string filename;
 	vector<string> assertions;
@@ -262,7 +262,6 @@ void Z3Solver::solve_problem_all_sat () {
 	  
 	  // get sat or unsat
 	  sat = get_is_sat(sat_str);
-	  
 	  debug && printf("\e[31m problem solved \e[0m\n" );
 
 	  if(options->cmd_option_bool("rm_z3_queries")){
@@ -271,101 +270,101 @@ void Z3Solver::solve_problem_all_sat () {
 	  }
 	  
 	  // if unsat then return 
-	  if(!sat){
-		timer->end_timer("solver");
-		return;
-	  }
-
-	  // set values for free_variables (varname, hint and value)
+	  if(sat){
+		// set values for free_variables (varname, hint and value)
 	  
-	  vector<string>::iterator       it_ret = ret_vector.begin(); it_ret++;
-	  set<NameAndPosition> free_variables_aux;
+		vector<string>::iterator       it_ret = ret_vector.begin(); it_ret++;
+		set<NameAndPosition> free_variables_aux;
 	  
-	  for( set<NameAndPosition>::iterator it = free_variables.begin(); it != free_variables.end(); it++,it_ret++ ){
+		for( set<NameAndPosition>::iterator it = free_variables.begin(); it != free_variables.end(); it++,it_ret++ ){
 		  
-		string line = *it_ret;
-		if(line.find("error") != string::npos )
-		  if(isdriver) assert(0 && "Error in z3 execution");
+		  string line = *it_ret;
+		  if(line.find("error") != string::npos )
+			if(isdriver) assert(0 && "Error in z3 execution");
 		
-		string varname = it->name;
-		string value = canonical_representation(result_get(*it_ret));
-		string hint = it->position;
+		  string varname = it->name;
+		  string value = canonical_representation(result_get(*it_ret));
+		  string hint = it->position;
 
-		result << hint << " " << value << std::endl;
+		  result << hint << " " << value << std::endl;
 		
-		debug && printf("\e[32m name \e[0m %s \e[32m hint \e[0m %s \e[32m value \e[0m %s\n", varname.c_str(), hint.c_str(), value.c_str() ); fflush(stdout);
-		pair<string,string> tmp;
-		tmp.first = hint;
-		if(value.find("true") != string::npos || value.find("false") != string::npos){
-		  tmp.second = value;
-		} else {
-		  tmp.second = "((_ int2bv 32) " + value + " )";
+		  debug && printf("\e[32m name \e[0m %s \e[32m hint \e[0m %s \e[32m value \e[0m %s\n", varname.c_str(), hint.c_str(), value.c_str() ); fflush(stdout);
+		  if(ite_conditions.find(hint) != ite_conditions.end()){
+			pair<string,string> tmp;
+			tmp.first = hint;
+			if(value.find("true") != string::npos || value.find("false") != string::npos){
+			  tmp.second = value;
+			} else {
+			  tmp.second = "((_ int2bv 32) " + value + " )";
+			}
+			insert_as_assertions.insert(tmp);
+		  }
+		
+		
+		  set_real_value_mangled(varname, value);
+		
+		  NameAndPosition nandp = {varname, hint, value};
+		  free_variables_aux.insert(nandp);
+		  //it->value = value;
+		  //set_real_value_hint(hint, value);
+		  //variables[varname].real_value = value;
+		
 		}
-		insert_as_assertions.insert(tmp);
-		
-		
-		set_real_value_mangled(varname, value);
-		
-		NameAndPosition nandp = {varname, hint, value};
-		free_variables_aux.insert(nandp);
-		//it->value = value;
-		//set_real_value_hint(hint, value);
-		//variables[varname].real_value = value;
-		
-	  }
 
-	  free_variables = free_variables_aux;
+		free_variables = free_variables_aux;
 
-	  // set values for variables (name and value)
+		// set values for variables (name and value)
 
-	  for( map<string,Z3Variable>::iterator it = variables.begin(); it != variables.end(); it++ ){
+		for( map<string,Z3Variable>::iterator it = variables.begin(); it != variables.end(); it++ ){
 
-		if(!need_for_dump(it->first, it->second.content)) continue;
+		  if(!need_for_dump(it->first, it->second.content)) continue;
 
-		string line = *it_ret;
-		if(line.find("error") != string::npos )
-		  if(isdriver) assert(0 && "Error in z3 execution");
+		  string line = *it_ret;
+		  if(line.find("error") != string::npos )
+			if(isdriver) assert(0 && "Error in z3 execution");
 
-		string name = it->first;
-		string value = canonical_representation(result_get(*it_ret));
+		  string name = it->first;
+		  string value = canonical_representation(result_get(*it_ret));
 
 
-		debug && printf("\e[32m name \e[0m %s \e[32m value \e[0m %s\n", name.c_str(), value.c_str() ); fflush(stdout);
+		  debug && printf("\e[32m name \e[0m %s \e[32m value \e[0m %s\n", name.c_str(), value.c_str() ); fflush(stdout);
 	
-		set_real_value_mangled(name, value);
-		//variables[name].real_value = value;
+		  set_real_value_mangled(name, value);
+		  //variables[name].real_value = value;
 
-		it_ret++;
-	  }
+		  it_ret++;
+		}
 
-	  // set values for first_content
+		// set values for first_content
 
-	  for( map<string,string>::iterator it = first_content.begin(); it != first_content.end(); it++ ){
-		set_first_content_value(it->first, canonical_representation(result_get(*it_ret)));
+		for( map<string,string>::iterator it = first_content.begin(); it != first_content.end(); it++ ){
+		  set_first_content_value(it->first, canonical_representation(result_get(*it_ret)));
 
-		it_ret++;
-	  }
+		  it_ret++;
+		}
 
-	  vector<string> prepare_assertions;
-	  for (set<pair<string,string>>::iterator itor = insert_as_assertions.begin(); itor != insert_as_assertions.end(); ++itor){
-		string tmp = "(not (= " + itor->first + " " + itor->second + "))";
-		prepare_assertions.push_back(tmp);
-	  }
-	  string assertion = "(assert ( or ";
-	  for(vector<string>::iterator itor = prepare_assertions.begin(); itor != prepare_assertions.end(); ++itor){
-		assertion += *itor;
-	  }
-	  assertion += "))";
-	  assertions.push_back(assertion);
-	  insert_as_assertions.clear();
+		vector<string> prepare_assertions;
+		for (set<pair<string,string>>::iterator itor = insert_as_assertions.begin(); itor != insert_as_assertions.end(); ++itor){
+		  string tmp = "(not (= " + itor->first + " " + itor->second + "))";
+		  prepare_assertions.push_back(tmp);
+		}
+		string assertion = "(assert ( or ";
+		for(vector<string>::iterator itor = prepare_assertions.begin(); itor != prepare_assertions.end(); ++itor){
+		  assertion += *itor;
+		}
+		assertion += "))";
+		assertions.push_back(assertion);
+		insert_as_assertions.clear();
 	
-	  string rm_cmd = "rm " + filename;
-	  system(rm_cmd.c_str());
+		string rm_cmd = "rm " + filename;
+		//system(rm_cmd.c_str());
 
-	  solutions++;
-	  printf("Solutions: %d\n", solutions);
-	  copy (assertions.begin(), assertions.end(), ostream_iterator<string>(cout, "\n"));
+		solutions++;
+		printf("Solutions: %d\n", solutions);
+		copy (assertions.begin(), assertions.end(), ostream_iterator<string>(cout, "\n"));
+	  }
 	} while (sat && solutions < max_depth);
+
 
 	result.close();
 	// TODO Write Results found into database or whereever they belong to!!
