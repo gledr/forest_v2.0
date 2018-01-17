@@ -348,13 +348,15 @@ void Z3Solver::solve_problem_all_sat () {
 		  string tmp = "(not (= " + itor->first + " " + itor->second + "))";
 		  prepare_assertions.push_back(tmp);
 		}
-		string assertion = "(assert ( or ";
-		for(vector<string>::iterator itor = prepare_assertions.begin(); itor != prepare_assertions.end(); ++itor){
-		  assertion += *itor;
+		if (!insert_as_assertions.empty()){
+		  string assertion = "(assert ( or ";
+		  for(vector<string>::iterator itor = prepare_assertions.begin(); itor != prepare_assertions.end(); ++itor){
+			assertion += *itor;
+		  }
+		  assertion += "))";
+		  assertions.push_back(assertion);
+		  insert_as_assertions.clear();
 		}
-		assertion += "))";
-		assertions.push_back(assertion);
-		insert_as_assertions.clear();
 	
 		string rm_cmd = "rm " + filename;
 		//system(rm_cmd.c_str());
