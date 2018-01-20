@@ -944,3 +944,25 @@ void print_path(Path path){
 	
 }
 
+void export_allsat (){
+  std::string const db_location = "/dev/shm/forest/database.db";
+  std::string const target_folder = "/tmp/smt";
+  std::string const filename_skeleton = "test.smt2";
+  std::shared_ptr<DatabaseExporter> exporter(new DatabaseExporter(db_location));
+  exporter->OpenDatabase();
+  exporter->set_directory(target_folder);
+  exporter->collect_data();
+  exporter->export_smt2(filename_skeleton);
+}
+
+void exec_allsat() {
+  std::shared_ptr<AllSAT> solver(new AllSAT("/tmp/smt"));
+  solver->init();
+  //solver->list_files();
+  //solver->dump_files();
+  solver->setMaximalSolutions(10);
+  solver->run();
+  solver->set_database_path("/dev/shm/forest/database.db");
+  solver->store_to_database();
+  solver->get_results_from_database();
+}

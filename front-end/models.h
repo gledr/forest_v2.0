@@ -25,6 +25,10 @@
 #include <string>
 #include <set>
 #include <sstream>
+#include <memory>
+
+#include "DatabaseExporter.hpp"
+#include "AllSAT.hpp"
 #include "cmd_options.h"
 
 using namespace std;
@@ -95,6 +99,8 @@ Path put_nth(string cond, Path path, int depth);
 void permute(vector<string>& variables_vec);
 void print_path_assign(PathAndAssign pa);
 void print_path(Path path);
+void export_allsat();
+void exec_allsat();
 
 
 #endif /* end of include guard: _MODELS_H_ */

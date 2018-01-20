@@ -232,6 +232,8 @@ int main(int argc, const char *argv[]) {
 	if(cmd_option_bool("get_concurrent_functions")) get_concurrent_functions(); // Get functions that can be executed concurrently
 	if(cmd_option_bool("commutativity")) commutativity_testing();               // Run commutativity_testing
 	if(cmd_option_bool("compare_isolate")) compare_isolate();                   // Isolate function and compare with original
+	if(cmd_option_bool("export_allsat")) export_allsat();                       // Export generated model (get_model) to smt instances
+	if(cmd_option_bool("execute_allsat")) exec_allsat();
 	return 0;
 
 }

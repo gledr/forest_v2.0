@@ -1735,7 +1735,14 @@ string Z3Solver::get_anded_stack_conditions(){
 
 
 void Z3Solver::dump_model(){
-
+  // We want to store all information into the database
+  // to create an SMT instance with all the information afterwards
+  if (options->cmd_option_bool("dump_all_test_cases")){
+	//string content_var = internal_condition(content(variable));
+	//string path_cond = get_anded_stack_conditions();
+	string path_cond = get_comma_stack_conditions();
+	database->insert_model_entry("", "", path_cond);
+  } else {
 
 	vector<string> outputs = options->cmd_option_vector_str("output");
 
@@ -1743,16 +1750,16 @@ void Z3Solver::dump_model(){
 
 	for( vector<string>::iterator it = outputs.begin(); it != outputs.end(); it++ ){
 
-		debug && printf("\e[32m dumping_model %s \e[0m\n", it->c_str() );
+	  debug && printf("\e[32m dumping_model %s \e[0m\n", it->c_str() );
 
-		string variable = *it;
-		string content_var = internal_condition(content(variable));
-		//string path_cond = get_anded_stack_conditions();
-		string path_cond = get_comma_stack_conditions();
-		database->insert_model_entry(variable, content_var, path_cond);
+	  string variable = *it;
+	  string content_var = internal_condition(content(variable));
+	  //string path_cond = get_anded_stack_conditions();
+	  string path_cond = get_comma_stack_conditions();
+	  database->insert_model_entry(variable, content_var, path_cond);
 		
 	}
-	
+  }
 	
 }
 
