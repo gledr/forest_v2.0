@@ -7,6 +7,7 @@
 #include <sqlite3.h>
 #include <boost/filesystem.hpp>
 #include <vector>
+#include <set>
 
 #define DEBUG
 
@@ -106,7 +107,11 @@ public:
 				table_entry.resolved_name = argv[1];
 				table_entry.type = argv[2];
 
-				p_free_variables.push_back(table_entry);
+				if(std::find(p_free_variables.begin(), p_free_variables.end(), table_entry) == p_free_variables.end()){
+					p_free_variables.push_back(table_entry);
+					std::cout << "inserting " << table_entry.resolved_name << std::endl;
+
+				}
 			} else if (p_active_transition == assertions){
 				assert (argc == 1);
 				p_assertion_paths.push_back(argv[0]);
@@ -240,11 +245,16 @@ private:
 	/**
 	 * @brief Represent a database entry for a free variable
 	 */
-	struct FreeVariables{
+	struct FreeVariables {
 		std::string reg_name;
 		std::string resolved_name;
 		std::string type;
+
+		bool operator== (FreeVariables const & fv){
+			return  !resolved_name.compare(fv.resolved_name);
+		}
 	};
+
 
 	sqlite3 * p_db;
 	std::string p_path;
@@ -418,7 +428,6 @@ private:
 			if(itor->resolved_name.find(keyword_select) != std::string::npos)
 			stream << "(get-value (" << itor->resolved_name << "))" << std::endl;
 		}
-
 	}
 
 	/**
