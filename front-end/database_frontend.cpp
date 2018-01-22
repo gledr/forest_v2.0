@@ -106,6 +106,7 @@ void clean_tables(){
 	action << "drop table measurements;";
 	action << "drop table frontend;";
 	action << "drop table check_xml;";
+	action << "drop table allsat;";
 	db_command( action.str() );
 
 	action.str("");

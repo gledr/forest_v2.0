@@ -172,6 +172,7 @@ public:
 			if (head_path.size() > max_path){
 				max_path = head_path.size();
 			}
+			std::string prev_path = "";
 
 
 			stream << std::left << std::setw(max_reg)  << head_name << " ";
@@ -179,24 +180,26 @@ public:
 			stream << std::left << std::setw(max_sol)  << head_sol  << " ";
 			stream << std::left << std::setw(max_path) << head_path << std::endl;
 
-			stream << std::left << std::setw(max_reg)  << std::string(max_reg,'-') << " ";
-			stream << std::left << std::setw(max_val)  << std::string(max_val, '-') << " ";
-			stream << std::left << std::setw(max_sol)  << std::string(max_sol, '-') << " ";
-			stream << std::left << std::setw(max_path) << std::string(max_path, '-') << std::endl;
+			draw_line(stream, max_reg, max_val, max_sol, max_path);
 
 			for(std::vector<SingleResultPair>::const_iterator itor = p_from_db.begin(); itor != p_from_db.end(); ++itor){
-				stream << std::left << std::setw(max_reg)  << itor->reg_name << " ";
-				stream << std::left << std::setw(max_val)  << itor->reg_val << " ";
-				stream << std::left << std::setw(max_sol)  << itor->solution << " ";
-				stream << std::left << std::setw(max_path) << itor->path << std::endl;
 
-				stream << std::left << std::setw(max_reg)  << std::string(max_reg,'-') << " ";
-				stream << std::left << std::setw(max_val)  << std::string(max_val, '-') << " ";
-				stream << std::left << std::setw(max_sol)  << std::string(max_sol, '-') << " ";
-				stream << std::left << std::setw(max_path) << std::string(max_path, '-') << std::endl;
+			  if (prev_path.empty()){
+				prev_path = itor->path;
+			  }
 
+			  if(prev_path != itor->path){
+				prev_path = itor->path;
+				draw_line(stream, max_reg, max_val, max_sol, max_path);
+			  }
 
+			  stream << std::left << std::setw(max_reg)  << itor->reg_name << " ";
+			  stream << std::left << std::setw(max_val)  << itor->reg_val << " ";
+			  stream << std::left << std::setw(max_sol)  << itor->solution << " ";
+			  stream << std::left << std::setw(max_path) << itor->path << std::endl;
 			}
+			draw_line(stream, max_reg, max_val, max_sol, max_path);
+
 
 		} catch (std::runtime_error & msg){
 			std::cerr<< msg.what() << std::endl;
@@ -210,8 +213,29 @@ public:
 	void store_to_database(){
 		try{
 			sqlite3 * db;
+			char * error_msg = 0;
+
 			if(sqlite3_open(p_database_path.c_str(), &db) != 0){
 				std::string error_msg = "Could now open database: " + p_database_path;
+				throw std::runtime_error(error_msg);
+			}
+
+			std::string drop = "drop table allsat;";
+			if(sqlite3_exec(db, drop.c_str(), c_callback, 0 , &error_msg) != 0){
+				std::string error_msg = "Could not execute query: " + drop;
+				throw std::runtime_error(error_msg);
+			}
+
+			std::stringstream create;
+			create << "create table allsat(";
+			create << "name varchar(5000),";
+			create << "value varchar(50),";
+			create << "solution integer,";
+			create << "path varchar(5000)";
+			create << ");";
+
+			if(sqlite3_exec(db, create.str().c_str(), c_callback, 0 , &error_msg) != 0){
+				std::string error_msg = "Could not execute query: " + create.str();
 				throw std::runtime_error(error_msg);
 			}
 
@@ -229,7 +253,7 @@ public:
 									   << solution << ",'"
 									   << itor->first
 									   << "');";
-						char * error_msg = 0;
+
 
 						if (sqlite3_exec(db, db_transaction.str().c_str(), c_callback, 0 , &error_msg) != 0){
 							std::string error_msg = "Can not executed query: " + db_transaction.str();
@@ -588,15 +612,22 @@ private:
 		return result_value;
 	}
 
-	/**
-	 * @brief Static callback function for the sqlite3 api
-	 * This static function gets the this pointer of the class and forwards the
-	 * data to an actual member of the class to have access to the memory
-	 */
-	 static int c_callback(void *data, int argc, char **argv, char **azColName){
-		 AllSAT * tmp = reinterpret_cast<AllSAT*>(data);
-		 return tmp->__callback__(argc, argv, azColName);
-	 }
+  /**
+   * @brief Static callback function for the sqlite3 api
+   * This static function gets the this pointer of the class and forwards the
+   * data to an actual member of the class to have access to the memory
+   */
+  static int c_callback(void *data, int argc, char **argv, char **azColName){
+	AllSAT * tmp = reinterpret_cast<AllSAT*>(data);
+	return tmp->__callback__(argc, argv, azColName);
+  }
+  
+  void draw_line(std::ostream & stream, size_t const max_reg, size_t const max_val, size_t const max_sol, size_t const max_path){
+	stream << std::left << std::setw(max_reg)  << std::string(max_reg,  '-') << " ";
+	stream << std::left << std::setw(max_val)  << std::string(max_val,  '-') << " ";
+	stream << std::left << std::setw(max_sol)  << std::string(max_sol,  '-') << " ";
+	stream << std::left << std::setw(max_path) << std::string(max_path, '-') << std::endl;
+  }
 };
 
 #endif /* ALLSAT_HPP_ */

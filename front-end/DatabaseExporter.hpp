@@ -43,19 +43,25 @@ public:
 	 * @param dir The directory to use, create if not existing
 	 */
 	void set_directory(std::string dir){
+		p_root_dir = dir;
 		try{
-			if (boost::filesystem::is_directory(dir)){
-				p_root_dir = dir;
+			if (boost::filesystem::exists(dir)){
 #ifdef DEBUG
-				std::cout << "Target Directory: " << dir << " exists!" << std::endl;
+				std::cout << "Removing directory " << dir << "..." << std::endl;
 #endif
-			} else {
-				if(boost::filesystem::create_directories(dir) != 0){
-					std::string msg = "Could not create directory " + dir;
-					throw new std::runtime_error(msg);
+				if(boost::filesystem::remove_all(dir) == 0){
+					std::string msg = "Could not remove directory: " + dir;
+					throw std::runtime_error(msg);
 				}
 			}
-		}catch (std::runtime_error & msg){
+#ifdef DEBUG
+			std::cout << "Creating directory " << dir << "..." << std::endl;
+#endif
+			if(boost::filesystem::create_directories(dir) == false){
+				std::string msg = "Could not create directory " + dir;
+				throw std::runtime_error(msg);
+			}
+		} catch (std::runtime_error & msg){
 			std::cerr << msg.what() << std::endl;
 		}
 	}
@@ -66,7 +72,7 @@ public:
 	void OpenDatabase () {
 		int success = -1;
 		try {
-		  if((success = sqlite3_open(p_path.c_str(), &p_db)) != 0){
+			if((success = sqlite3_open(p_path.c_str(), &p_db)) != 0){
 				throw new std::runtime_error("Can not open database!");
 			}
 #ifdef DEBUG
