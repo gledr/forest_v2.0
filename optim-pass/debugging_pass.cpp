@@ -47,9 +47,6 @@
 using namespace llvm;
 using namespace std;
 
-
-#define DEBUG
-
 /*
  * Use for the communication between the insert_select_variables pass and the loop_latch_info pass
  */
@@ -189,75 +186,145 @@ struct SelectVariables: public ModulePass {
   }
 };
 
+
+GlobalVariable* make_global_str(Module& M, string name){
+
+	uint64_t length = (uint64_t) name.length()+1;
+	//cerr << "---------------------" << name << "---------" << length << endl;
+	ArrayType* ArrayTy_0 = ArrayType::get(IntegerType::get(M.getContext(), 8), length );
+
+	GlobalVariable* gvar_array_a = new GlobalVariable(/*Module=*/M,
+			/*Type=*/ArrayTy_0,
+			/*isConstant=*/false,
+			/*Linkage=*/GlobalValue::ExternalLinkage,
+			/*Initializer=*/0, // has initializer, specified below
+			/*Name=*/"a");
+
+	Constant* const_array_2 = ConstantDataArray::getString(M.getContext(), name.c_str(), true);
+
+	// Global Variable Definitions
+	gvar_array_a->setInitializer(const_array_2);
+
+	return gvar_array_a;
+
+}
+
+Constant* pointerToArray( Module& M, GlobalVariable* global_var ){
+	ConstantInt* const_int64_10 = ConstantInt::get(M.getContext(), APInt(64, StringRef("0"), 10));
+	std::vector<Constant*> const_ptr_9_indices;
+	const_ptr_9_indices.push_back(const_int64_10);
+	const_ptr_9_indices.push_back(const_int64_10);
+
+	Constant* const_ptr_9 = ConstantExpr::getGetElementPtr(NULL, global_var, const_ptr_9_indices);
+
+	return const_ptr_9;
+}
+
+#define DEBUG
+
 struct InjectResults : public ModulePass {
   static char ID;
   InjectResults() : ModulePass(ID) {}
 
+  int const pos_load_value   = 1;
+  int const pos_load_enable  = 2;
+  int const pos_alloc_value  = 3;
+  int const pos_alloc_enable = 4;
+  
   virtual bool runOnModule(Module &M) {
 
-	Constant* nondet_int = M.getOrInsertFunction("__VERIFIER_nondet_int" , Type::getInt32Ty(M.getContext()), (Type*)0);
+   
+	Constant* nondet_int = M.getOrInsertFunction("__VERIFIER_nondet_int" , Type::getInt32Ty(M.getContext()), Type::getInt8PtrTy(M.getContext()), NULL);
 	Function* hook_value = dyn_cast<Function>(nondet_int);
 
-	Constant* nondet_bool = M.getOrInsertFunction("__VERIFIER_nondet_bool" , Type::getInt1Ty(M.getContext()), (Type*)0);
+	Constant* nondet_bool = M.getOrInsertFunction("__VERIFIER_nondet_bool" , Type::getInt1Ty(M.getContext()), Type::getInt8PtrTy(M.getContext()), NULL);
 	Function* hook_enable = dyn_cast<Function>(nondet_bool);
-	
-	int select_var_pos = 0;	
+
+	std::vector<int> select_var_positions;
+	std::vector<BasicBlock::iterator> found_select_variables;
+
 	for (Module::iterator fn = M.begin(); fn != M.end(); ++fn ){
 	  for (Function::iterator bb = fn->begin(); bb != fn->end(); ++bb){
+#ifdef DEBUG
+		errs () << "Basic Block\n";
+#endif
+		int select_var_pos = 0;
+		int found_select_variables_cnt = found_select_variables.size();
 		for (BasicBlock::iterator in = bb->begin(); in != bb->end(); ++in){
 		  	select_var_pos++;
 		  if(SelectInst::classof(in)){
-			break;
+			if(std::find(found_select_variables.begin(), found_select_variables.end(), in) == found_select_variables.end()){
+#ifdef DEBUG
+			  errs () << *in << "\n";
+#endif			 
+			  select_var_positions.push_back(select_var_pos+ 4*(select_var_positions.size()));
+			  found_select_variables.push_back(in);
+			}
 		  }
 		}
-		int cnt = 0;
-		Instruction* alloc_enable;
-		for(BasicBlock::iterator in = bb->begin(); cnt != select_var_pos-4; ++in){
-		  ++cnt;
-		  alloc_enable = in;
+		if (found_select_variables_cnt == found_select_variables.size()){
+		  continue;
 		}
-		errs () << *alloc_enable << "\n";
+#ifdef DEBUG
+		errs () << "Found " << select_var_positions.size() << " select variables\n";
+#endif
+		for(std::vector<int>::const_iterator itor = select_var_positions.begin(); itor != select_var_positions.end(); ++itor){
+		  int cnt = 0;
+		  Instruction* alloc_enable;
+		  for(BasicBlock::iterator in = bb->begin(); cnt != *itor - pos_alloc_enable; ++in){
+			++cnt;
+			alloc_enable = in;
+		  }
+#ifdef DEBUG
+		  errs () << *alloc_enable << "\n";
+#endif
 
-		cnt = 0;
-		Instruction * alloc_value;
-		for(BasicBlock::iterator in = bb->begin(); cnt != select_var_pos-3; ++in){
-		  ++cnt;
-		  alloc_value = in;
-		}
-		errs () << *alloc_value << "\n";
+		  cnt = 0;
+		  Instruction * alloc_value;
+		  for(BasicBlock::iterator in = bb->begin(); cnt != *itor - pos_alloc_value; ++in){
+			++cnt;
+			alloc_value = in;
+		  }
+#ifdef DEBUG
+		  errs () << *alloc_value << "\n";
+#endif
+		  cnt = 0;
+		  Instruction * top_load_enable;
+		  for(BasicBlock::iterator in = bb->begin(); cnt != *itor - pos_load_enable; ++in){
+			++cnt;
+			top_load_enable = in;
+		  }
+#ifdef DEBUG
+		  errs () << *top_load_enable << "\n";
+#endif
+		  cnt = 0;
+		  Instruction * top_load_value;
+		  for(BasicBlock::iterator in = bb->begin(); cnt != *itor - pos_load_value; ++in){
+			++cnt;
+			top_load_value = in;
+		  }
+#ifdef DEBUG
+		  errs () << *top_load_value << "\n";
+#endif
+		  GlobalVariable* global_val_value = make_global_str(M, alloc_value->getName());
+		  std::vector<Value*> params_value;
+		  params_value.push_back(pointerToArray(M,global_val_value));
+		  Instruction *call_replace_value = CallInst::Create(hook_value, params_value, "");
+		  call_replace_value->insertAfter(alloc_value);
 
-		cnt = 0;
-		Instruction * top_load_enable;
-		for(BasicBlock::iterator in = bb->begin(); cnt != select_var_pos-2; ++in){
-		  ++cnt;
-		 top_load_enable = in;
-		}
-		
-		errs () << *top_load_enable << "\n";
-
-		cnt = 0;
-		Instruction * top_load_value;
-		for(BasicBlock::iterator in = bb->begin(); cnt != select_var_pos-1; ++in){
-		  ++cnt;
-		 top_load_value = in;
-		}
-		
-		errs () << *top_load_value << "\n";
-
-		Instruction *call_replace_value = CallInst::Create(hook_value, "");
-		call_replace_value->insertAfter(alloc_value);
-
-		Instruction *call_replace_enable = CallInst::Create(hook_enable, "");
-		call_replace_enable->insertAfter(alloc_enable);
+		  GlobalVariable* global_val_enable = make_global_str(M, alloc_enable->getName());
+		  std::vector<Value*> params_enable;
+		  params_enable.push_back(pointerToArray(M,global_val_enable));
+		  Instruction *call_replace_enable = CallInst::Create(hook_enable, params_enable,  "");
+		  call_replace_enable->insertAfter(alloc_enable);
 	
-		StoreInst* store_value =  new StoreInst(call_replace_value,  alloc_value,  top_load_value);
-		StoreInst* store_enable = new StoreInst(call_replace_enable, alloc_enable, top_load_enable);
+		  StoreInst* store_value =  new StoreInst(call_replace_value,  alloc_value,  top_load_value);
+		  StoreInst* store_enable = new StoreInst(call_replace_enable, alloc_enable, top_load_enable);
+		}	
 	  }
 	}
-
 	return true;
   }
-
 };
 
 
