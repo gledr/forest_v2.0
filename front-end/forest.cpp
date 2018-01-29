@@ -42,6 +42,13 @@ void show_version_and_exit(){
 	exit(0);
 }
 
+void run_evaluation (){
+  std::string test_case = "/home/sebastian/forest_fork/forest_v2.0/test/select_variables_examples/simple_example/";
+  std::shared_ptr<Evaluation> eval(new Evaluation(test_case));
+  eval ->compile_binary();
+}
+
+
 void show_help() {
     int const WIDTH = 30;
 
@@ -233,7 +240,8 @@ int main(int argc, const char *argv[]) {
 	if(cmd_option_bool("commutativity")) commutativity_testing();               // Run commutativity_testing
 	if(cmd_option_bool("compare_isolate")) compare_isolate();                   // Isolate function and compare with original
 	if(cmd_option_bool("export_allsat")) export_allsat();                       // Export generated model (get_model) to smt instances
-	if(cmd_option_bool("execute_allsat")) exec_allsat();
+	if(cmd_option_bool("execute_allsat")) exec_allsat();                        // Execute all sat based on the exported smt instances 
+	if(cmd_option_bool("run_evaluation")) run_evaluation ();                    // Evaluate the results obtained by exec_allsat
 	return 0;
 
 }

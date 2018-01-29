@@ -32,6 +32,7 @@
 #include <fstream>
 #include <iostream>
 #include <iomanip>
+#include <memory>
 #include "cmd_options.h"
 #include "database_frontend.h"
 #include "pass_handler.h"
@@ -41,6 +42,7 @@
 #include "models.h"
 #include "goanna_fpr.h"
 #include "commutativity.h"
+#include "evaluation.hpp"
 
 using namespace std;
 
