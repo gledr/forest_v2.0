@@ -6,7 +6,7 @@
 
 #include "interface.hpp"
 
-#define DEBUG
+//#define DEBUG
 
 struct SingleResult {
   std::string value;
@@ -46,10 +46,14 @@ int __VERIFIER_nondet_int(char * _reg_name){
 	std::string reg_name = get_mangled_name(_reg_name);
 	static size_t cnt = 0;
 	if (cnt < results[reg_name].size()){
+#ifdef DEBUG
 	   std::cout << results[reg_name][cnt].value << std::endl;
+#endif
 		int answer = std::stoi(results[reg_name][cnt].value);
 		cnt++;
+#ifdef DEBUG
 		std::cout << "Injection Value: " << answer << std::endl;
+#endif
 		return answer;
 	} else {
 		std::cerr << "Index Error: cnt > select_values.size()" << std::endl;
@@ -67,7 +71,9 @@ bool __VERIFIER_nondet_bool(char * _reg_name){
 	}
 	std::string reg_name = get_mangled_name(_reg_name);
 	static size_t cnt = 0;
+#ifdef DEBUG
 	std::cout << cnt << std::endl;
+#endif
 	if (cnt < results[reg_name].size()){
 		bool answer;
 		if (results[reg_name][cnt].value == "true" || results[reg_name][cnt].value == "1"){

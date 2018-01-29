@@ -220,7 +220,6 @@ Constant* pointerToArray( Module& M, GlobalVariable* global_var ){
 	return const_ptr_9;
 }
 
-#define DEBUG
 
 struct InjectResults : public ModulePass {
   static char ID;
