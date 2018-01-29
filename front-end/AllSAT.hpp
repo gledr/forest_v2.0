@@ -243,25 +243,37 @@ public:
 			std::vector<std::vector<SingleResultPair> >::const_iterator inner_itor;
 			std::vector<SingleResultPair>::const_iterator sol_itor;
 			for(itor = p_generated_results.begin(); itor != p_generated_results.end(); ++itor){
-				int solution = 1;
-				for(inner_itor = itor->second.begin(); inner_itor != itor->second.end(); ++inner_itor){
-					for(sol_itor = inner_itor->begin(); sol_itor != inner_itor->end(); ++sol_itor){
-						std::stringstream db_transaction;
-						db_transaction << "insert into allsat values('"
-								       << sol_itor->reg_name  << "','"
-								       << sol_itor->reg_val   << "',"
-									   << solution << ",'"
-									   << itor->first
-									   << "');";
+			  int solution = 1;
+			  for(inner_itor = itor->second.begin(); inner_itor != itor->second.end(); ++inner_itor){
+				for(sol_itor = inner_itor->begin(); sol_itor != inner_itor->end(); ++sol_itor){
+				  std::string to_insert = sol_itor->reg_val;
+				  std::string as_hex = sol_itor->reg_val;
+				  if(to_insert[0] == '#'){
+					std::stringstream convert;
+					as_hex[0] = '0';
+					convert << std::hex << as_hex;
+					int as_decimal;
+					convert >> as_decimal;
+					std::stringstream to_decimal;
+					to_decimal << as_decimal;
+						to_decimal >> to_insert;
+				  }
+				  std::stringstream db_transaction;
+				  db_transaction << "insert into allsat values('"
+								 << sol_itor->reg_name  << "','"
+								 << to_insert   << "',"
+								 << solution << ",'"
+								 << itor->first
+								 << "');";
 
-
-						if (sqlite3_exec(db, db_transaction.str().c_str(), c_callback, 0 , &error_msg) != 0){
-							std::string error_msg = "Can not executed query: " + db_transaction.str();
-							throw std::runtime_error(error_msg);
-						}
-					}
-					solution++;
+				  
+				  if (sqlite3_exec(db, db_transaction.str().c_str(), c_callback, 0 , &error_msg) != 0){
+					std::string error_msg = "Can not executed query: " + db_transaction.str();
+					throw std::runtime_error(error_msg);
+				  }
 				}
+				solution++;
+			  }
 			}
 			sqlite3_close(db);
 
