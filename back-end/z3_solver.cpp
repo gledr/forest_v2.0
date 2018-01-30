@@ -1741,7 +1741,33 @@ void Z3Solver::dump_model(){
 	//string content_var = internal_condition(content(variable));
 	//string path_cond = get_anded_stack_conditions();
 	string path_cond = get_comma_stack_conditions();
-	database->insert_model_entry("", "", path_cond);
+	std::string counter_file = "/tmp/__counter__";
+	if(!boost::filesystem::exists(counter_file)){
+	  std::fstream file;
+	  file.open(counter_file, std::ios::out);
+	  file << "0" << std::endl;
+	  file.close();
+	}
+
+	std::fstream in_file;
+	in_file.open(counter_file, std::ios::in);
+	std::string val;
+	std::getline(in_file, val);
+	in_file.close();
+					 
+	database->insert_model_entry("", val, path_cond);
+
+	boost::filesystem::remove(counter_file);
+	std::fstream out_file;
+	out_file.open(counter_file, std::ios::out);
+	std::stringstream tmp;
+	int new_val;
+	tmp << val;
+	tmp >> new_val;
+	new_val++;
+	out_file << std::to_string(new_val);
+	out_file.close();
+   
   } else {
 
 	vector<string> outputs = options->cmd_option_vector_str("output");

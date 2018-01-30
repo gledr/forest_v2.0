@@ -210,6 +210,7 @@ int main(int argc, const char *argv[]) {
 	if(cmd_option_bool("export_allsat")) export_allsat();                       // Export generated model (get_model) to smt instances
 	if(cmd_option_bool("execute_allsat")) exec_allsat();                        // Execute all sat based on the exported smt instances 
 	if(cmd_option_bool("run_evaluation")) run_evaluation ();                    // Evaluate the results obtained by exec_allsat
+	if(cmd_option_bool("export_model")) export_model();                         // Exports current model into permanent database
 	if(cmd_option_bool("version")) show_version_and_exit();                     // print version info
     if(cmd_option_bool("help")) show_help();                                    // Show all possible command line arguments for forest
 	if(cmd_option_bool("make_bc")) make_bc();                                   // generates bc with instrumentation and isolated function

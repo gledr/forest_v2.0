@@ -29,6 +29,8 @@
 
 #include "DatabaseExporter.hpp"
 #include "AllSAT.hpp"
+#include "ModelExporter.hpp"
+
 #include "cmd_options.h"
 
 using namespace std;
@@ -101,6 +103,7 @@ void print_path_assign(PathAndAssign pa);
 void print_path(Path path);
 void export_allsat();
 void exec_allsat();
+void export_model();
 
 
 #endif /* end of include guard: _MODELS_H_ */

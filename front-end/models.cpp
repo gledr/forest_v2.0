@@ -970,3 +970,10 @@ void exec_allsat() {
 
   exit(0);
 }
+
+void export_model () {
+  std::shared_ptr<ModelExporter> model_exporter(new ModelExporter("/dev/shm/forest/", "/tmp/smt/"));
+  model_exporter->ExportModel();
+
+  exit(0);
+}

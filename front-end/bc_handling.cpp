@@ -205,7 +205,7 @@ void final(){
 
 		// link
 		cmd.str("");
-		cmd << "clang++ final.o -lpthread -ldl -lrt -o " << output_file;
+		cmd << "clang++ final.o -lboost_filesystem -lboost_system -lpthread -ldl -lrt -o " << output_file;
 		systm(cmd.str().c_str());
 	} else {
 		// From .bc to .s
@@ -220,7 +220,7 @@ void final(){
 
 		// link
 		cmd.str("");
-		cmd << "clang++ file-4.o " << base_path << "/lib/forest.a" << " -lpthread -ldl -lrt -o " << output_file;
+		cmd << "clang++ file-4.o " << base_path << "/lib/forest.a" << " -lpthread -ldl -lrt -lboost_system -lboost_filesystem -o " << output_file;
 		systm(cmd.str().c_str());
 	}
 

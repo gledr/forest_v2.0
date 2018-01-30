@@ -24,6 +24,7 @@
 
 #include "solver_wrapper.h"
 #include "z3_variable.h"
+#include <boost/filesystem.hpp>
 
 
 
