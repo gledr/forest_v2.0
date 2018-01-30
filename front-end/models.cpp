@@ -953,6 +953,8 @@ void export_allsat (){
   exporter->set_directory(target_folder);
   exporter->collect_data();
   exporter->export_smt2(filename_skeleton);
+
+  exit(0);
 }
 
 void exec_allsat() {
@@ -965,4 +967,6 @@ void exec_allsat() {
   solver->set_database_path("/dev/shm/forest/database.db");
   solver->store_to_database();
   solver->get_results_from_database();
+
+  exit(0);
 }

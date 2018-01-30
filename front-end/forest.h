@@ -43,6 +43,7 @@
 #include "goanna_fpr.h"
 #include "commutativity.h"
 #include "evaluation.hpp"
+#include <boost/filesystem.hpp>
 
 using namespace std;
 

@@ -51,9 +51,7 @@ int __VERIFIER_nondet_int(char * _reg_name){
 #endif
 		int answer = std::stoi(results[reg_name][cnt].value);
 		cnt++;
-#ifdef DEBUG
-		std::cout << "Injection Value: " << answer << std::endl;
-#endif
+		std::cout << reg_name << ": " << answer << std::endl;
 		return answer;
 	} else {
 		std::cerr << "Index Error: cnt > select_values.size()" << std::endl;
@@ -81,15 +79,11 @@ bool __VERIFIER_nondet_bool(char * _reg_name){
 		} else {
 			answer = false;
 		}
-#ifdef DEBUG
-		std::cout << "Injection Select Value: " << answer << std::endl;
-#endif
+		std::cout << reg_name << ": " << answer << std::endl;
 		cnt++;
 		return answer;
 	} else {
-#ifdef DEBUG
 		std::cerr << "Index Error: cnt > select_variables.size()" << std::endl;
-#endif
 		return false;
 	}
 }
