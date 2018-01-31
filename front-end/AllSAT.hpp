@@ -596,7 +596,7 @@ private:
 	std::vector<SingleResultPair> evaluate_results (std::vector<std::string> const & data) {
 		std::vector<std::string> sorted;
 		std::vector<std::string>::const_iterator itor;
-		std::string sort_what = "select";
+		std::string sort_what = "select_enable";
 		std::vector<SingleResultPair> result_value;
 
 		for(itor = data.begin(); itor != data.end(); ++itor){
