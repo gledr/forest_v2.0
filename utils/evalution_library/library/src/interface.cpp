@@ -25,9 +25,6 @@ static bool init_done = false;
 static std::string get_mangled_name (std::string const & name);
 
 void __VERIFIER_assert(int val){
-#ifdef DEBUG
-  std::cout << "__VERIFIER_assert has been called..." << std::endl;
-#endif
   if (val){
 	std::cout << "Solution is SAT" << std::endl;
   } else {
@@ -36,21 +33,14 @@ void __VERIFIER_assert(int val){
 }
 
 int __VERIFIER_nondet_int(char * _reg_name){
-#ifdef DEBUG
-  std::cout << "__VERIFIER_nondet_int" << std::endl;
-  std::cout << _reg_name << std::endl;
-#endif
 	if(!init_done){
 		run_init();
 	}
 	std::string reg_name = get_mangled_name(_reg_name);
 	static size_t cnt = 0;
 	if (cnt < results[reg_name].size()){
-#ifdef DEBUG
-	   std::cout << results[reg_name][cnt].value << std::endl;
-#endif
 		int answer = std::stoi(results[reg_name][cnt].value);
-		cnt++;
+		//cnt++;
 		std::cout << reg_name << ": " << answer << std::endl;
 		return answer;
 	} else {
@@ -60,18 +50,11 @@ int __VERIFIER_nondet_int(char * _reg_name){
 }
 
 bool __VERIFIER_nondet_bool(char * _reg_name){
-#ifdef DEBUG
-  std::cout << "__VERIFIER_nondet_bool" << std::endl;
-  std::cout << _reg_name << std::endl;
-#endif
 	if(!init_done){
 		run_init();
 	}
 	std::string reg_name = get_mangled_name(_reg_name);
 	static size_t cnt = 0;
-#ifdef DEBUG
-	std::cout << cnt << std::endl;
-#endif
 	if (cnt < results[reg_name].size()){
 		bool answer;
 		if (results[reg_name][cnt].value == "true" || results[reg_name][cnt].value == "1"){
@@ -79,8 +62,8 @@ bool __VERIFIER_nondet_bool(char * _reg_name){
 		} else {
 			answer = false;
 		}
-		std::cout << reg_name << ": " << answer << std::endl;
-		cnt++;
+		std::cout << reg_name << ": " << std::boolalpha << answer << std::endl;
+		//cnt++;
 		return answer;
 	} else {
 		std::cerr << "Index Error: cnt > select_variables.size()" << std::endl;

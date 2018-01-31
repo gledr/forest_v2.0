@@ -45,26 +45,6 @@ public:
 	 */
 	void set_directory(std::string dir){
 		p_root_dir = dir;
-		try{
-			if (boost::filesystem::exists(dir)){
-#ifdef DEBUG
-				std::cout << "Removing directory " << dir << "..." << std::endl;
-#endif
-				if(boost::filesystem::remove_all(dir) == 0){
-					std::string msg = "Could not remove directory: " + dir;
-					throw std::runtime_error(msg);
-				}
-			}
-#ifdef DEBUG
-			std::cout << "Creating directory " << dir << "..." << std::endl;
-#endif
-			if(boost::filesystem::create_directories(dir) == false){
-				std::string msg = "Could not create directory " + dir;
-				throw std::runtime_error(msg);
-			}
-		} catch (std::runtime_error & msg){
-			std::cerr << msg.what() << std::endl;
-		}
 	}
 
 	/**
@@ -113,8 +93,11 @@ public:
 
 				}
 			} else if (p_active_transition == assertions){
-				assert (argc == 1);
-				p_assertion_paths.push_back(argv[0]);
+			  assert(argc == 2);
+			  Model tmp;
+			  tmp.path = argv[0];
+			  tmp.content = argv[1];
+			  p_assertions.push_back(tmp);
 			}
 		} catch (...){
 			std::cerr<< "Unknown error caught!" << std::endl;
@@ -205,7 +188,7 @@ public:
 	 */
 	void export_smt2(std::string const & file){
 		std::string __file = file;
-		for(size_t i = 0; i < p_assertion_paths.size(); ++i){
+		for(size_t i = 0; i < p_sorted_assertions.size(); ++i){
 			__file = p_root_dir + "/path_" + std::to_string(i) + "_" + file;
 			std::fstream out_file;
 			out_file.open(__file, std::ios::out);
@@ -254,15 +237,22 @@ private:
 			return  !resolved_name.compare(fv.resolved_name);
 		}
 	};
-
-
-	sqlite3 * p_db;
-	std::string p_path;
-	active_transition p_active_transition;
-	std::vector<FreeVariables> p_free_variables;
-	std::vector<std::string> p_select_variables;
-	std::vector<std::string> p_assertion_paths;
-	std::string p_root_dir;
+  
+  struct Model{
+	std::string variable;
+	std::string content;
+	std::string path;
+  };
+  
+  
+  sqlite3 * p_db;
+  std::string p_path;
+  active_transition p_active_transition;
+  std::vector<FreeVariables> p_free_variables;
+  std::vector<std::string> p_select_variables;
+  std::vector<Model> p_assertions;
+  std::vector<std::vector<std::string> > p_sorted_assertions;
+  std::string p_root_dir;
 
 	/**
 	 * @brief Dummy function for database transactions
@@ -328,10 +318,28 @@ private:
 	 *           even when multiple use cases have been performed
 	 */
 	void get_model_assertions (){
-		std::string const query = "SELECT path FROM models";
+		std::string const query = "SELECT smt, path FROM models";
 		p_active_transition = assertions;
 		execute_database_call(query);
 		p_active_transition = init;
+
+		int num_of_paths = 0;
+		// find number of different path
+		for(auto itor = p_assertions.begin(); itor != p_assertions.end(); ++itor){
+		  if (std::stoi(itor->content) > num_of_paths){
+			num_of_paths = std::stoi(itor->content);
+		  }
+		}
+		std::cout << "Number of Paths: " << num_of_paths << std::endl;
+
+		// We start with 0, however 0 does not count as space for the vector
+		p_sorted_assertions.resize(num_of_paths+1);
+
+		std::cout << "Resized Container" << std::endl;
+		for(auto itor = p_assertions.begin(); itor != p_assertions.end(); ++itor){
+		  p_sorted_assertions[std::stoi(itor->content)].push_back(itor->path);
+		}
+		std::cout << "Inserted into container" << std::endl;
 	}
 
 	/*
@@ -380,15 +388,15 @@ private:
 	 */
 	void write_assertions(std::stringstream & stream, int path){
 		try {
-			if(!p_assertion_paths.empty()){
+			if(!p_sorted_assertions.empty()){
 				stream << "; Start Assertions" << std::endl;
 
 				// #1 Write the assertions gained from the database
-				std::string current_stream = p_assertion_paths[path];
-				std::vector<std::string> elems = this->split(current_stream, ",");
+				std::vector<std::string> current_stream = p_sorted_assertions[path];
 
-				for(std::vector<std::string>::const_iterator itor = elems.begin(); itor != elems.end(); ++itor){
-					stream << "(assert " << *itor << ")" << std::endl;
+				for(std::vector<std::string>::iterator itor = current_stream.begin(); itor != current_stream.end(); ++itor){
+				  std::string tmp_string  = itor->substr(0, itor->size()-1);
+					stream << "(assert-soft " << tmp_string << ")" << std::endl;
 				}
 
 				// #2 Introduce the soft assertions for the select variables
@@ -459,30 +467,6 @@ private:
 		minimize_select_variables_recursion(conditions, assertion);
 		assertion += ") " + std::to_string(max_activated_sel_vars) + " ))";
 		return assertion;
-	}
-
-	/**
-	 * @brief Split a string at delimiter and pack them into a vector
-	 *
-	 * @param str The string to split
-	 * @param delim The delimiter to use
-	 */
-	std::vector<std::string> split(std::string const & str, std::string const & delim) {
-	    std::vector<std::string> tokens;
-	    size_t prev = 0;
-	    size_t pos = 0;
-
-	    do
-	    {
-	        pos = str.find(delim, prev);
-	        if (pos == std::string::npos) pos = str.length();
-	        std::string token = str.substr(prev, pos-prev);
-	        if (!token.empty()) tokens.push_back(token);
-	        prev = pos + delim.length();
-	    }
-	    while (pos < str.length() && prev < str.length());
-
-	    return tokens;
 	}
 };
 

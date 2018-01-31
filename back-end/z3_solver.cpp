@@ -1741,7 +1741,7 @@ void Z3Solver::dump_model(){
 	//string content_var = internal_condition(content(variable));
 	//string path_cond = get_anded_stack_conditions();
 	string path_cond = get_comma_stack_conditions();
-	std::string counter_file = "/tmp/__counter__";
+	std::string counter_file = "__counter__";
 	if(!boost::filesystem::exists(counter_file)){
 	  std::fstream file;
 	  file.open(counter_file, std::ios::out);
