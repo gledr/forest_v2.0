@@ -53,7 +53,7 @@ void fill_cases(){
 	case_4["a"] = "0";
 	case_4["b"] = "1";
 	case_4["c"] = "1";
-	case_4["y"] = "1";
+	case_4["y"] = "0";
 	cases.push_back(case_4);
 
 
@@ -62,7 +62,7 @@ void fill_cases(){
 	case_5["a"] = "1";
 	case_5["b"] = "0";
 	case_5["c"] = "0";
-	case_5["y"] = "1";
+	case_5["y"] = "0";
 	cases.push_back(case_5);
 
 	// case 6
@@ -70,7 +70,7 @@ void fill_cases(){
 	case_6["a"] = "1";
 	case_6["b"] = "0";
 	case_6["c"] = "1";
-	case_6["y"] = "0";
+	case_6["y"] = "1";
 	cases.push_back(case_6);
 
 

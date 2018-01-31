@@ -29,6 +29,7 @@ public:
 		p_db = 0;
 		p_path = path;
 		p_active_transition = init;
+		p_num_of_problems = 0;
 	}
 
 	/**
@@ -47,7 +48,8 @@ public:
 		p_root_dir = dir;
 	}
 
-	/**
+
+  /**
 	 * @brief Open Connection to database
 	 */
 	void OpenDatabase () {
@@ -89,15 +91,9 @@ public:
 
 				if(std::find(p_free_variables.begin(), p_free_variables.end(), table_entry) == p_free_variables.end()){
 					p_free_variables.push_back(table_entry);
-					std::cout << "inserting " << table_entry.resolved_name << std::endl;
-
 				}
 			} else if (p_active_transition == assertions){
-			  assert(argc == 2);
-			  Model tmp;
-			  tmp.path = argv[0];
-			  tmp.content = argv[1];
-			  p_assertions.push_back(tmp);
+			  p_assertions.push_back(argv[0]);
 			}
 		} catch (...){
 			std::cerr<< "Unknown error caught!" << std::endl;
@@ -188,7 +184,7 @@ public:
 	 */
 	void export_smt2(std::string const & file){
 		std::string __file = file;
-		for(size_t i = 0; i < p_sorted_assertions.size(); ++i){
+		for(size_t i = 0; i < p_assertions_ordered.size(); ++i){
 			__file = p_root_dir + "/path_" + std::to_string(i) + "_" + file;
 			std::fstream out_file;
 			out_file.open(__file, std::ios::out);
@@ -237,22 +233,16 @@ private:
 			return  !resolved_name.compare(fv.resolved_name);
 		}
 	};
-  
-  struct Model{
-	std::string variable;
-	std::string content;
-	std::string path;
-  };
-  
-  
+   
   sqlite3 * p_db;
   std::string p_path;
   active_transition p_active_transition;
   std::vector<FreeVariables> p_free_variables;
   std::vector<std::string> p_select_variables;
-  std::vector<Model> p_assertions;
-  std::vector<std::vector<std::string> > p_sorted_assertions;
+  std::vector<std::string> p_assertions;
   std::string p_root_dir;
+  size_t p_num_of_problems;
+  std::vector<std::vector<std::string> > p_assertions_ordered;
 
 	/**
 	 * @brief Dummy function for database transactions
@@ -318,28 +308,23 @@ private:
 	 *           even when multiple use cases have been performed
 	 */
 	void get_model_assertions (){
-		std::string const query = "SELECT smt, path FROM models";
+		std::string const query = "SELECT smt FROM models ORDER BY smt;";
 		p_active_transition = assertions;
 		execute_database_call(query);
 		p_active_transition = init;
 
-		int num_of_paths = 0;
-		// find number of different path
-		for(auto itor = p_assertions.begin(); itor != p_assertions.end(); ++itor){
-		  if (std::stoi(itor->content) > num_of_paths){
-			num_of_paths = std::stoi(itor->content);
-		  }
+		std::fstream infile;
+		infile.open("/tmp/smt/__num_of_problems__", std::ios::in);
+		infile >> p_num_of_problems;
+		infile.close();
+		boost::filesystem::remove("/tmp/smt/__num_of_problems__");
+		int current_problem = 0;
+		int chunks = p_assertions.size() / p_num_of_problems;
+		for(int i = 0; i < p_num_of_problems; ++i){
+		  int cnt = i;
+		  std::vector<std::string> tmp(p_assertions.begin()+(cnt*chunks), p_assertions.begin()+((cnt+1)*chunks));
+		  p_assertions_ordered.push_back(tmp);
 		}
-		std::cout << "Number of Paths: " << num_of_paths << std::endl;
-
-		// We start with 0, however 0 does not count as space for the vector
-		p_sorted_assertions.resize(num_of_paths+1);
-
-		std::cout << "Resized Container" << std::endl;
-		for(auto itor = p_assertions.begin(); itor != p_assertions.end(); ++itor){
-		  p_sorted_assertions[std::stoi(itor->content)].push_back(itor->path);
-		}
-		std::cout << "Inserted into container" << std::endl;
 	}
 
 	/*
@@ -369,12 +354,12 @@ private:
 				if (type == "IntegerTyID32"){
 					type_string = "(_ BitVec 32)";
 				} else if (type == "IntegerTyID1"){
-					type_string = "bool";
+					type_string = "Bool";
 				} else {
 					throw new std::runtime_error("Datatype not supported yet!");
 				}
 
-				stream << "(declare-const " << name << " " << type_string << ")" << std::endl;
+				stream << "(declare-fun " <<  name << " ()  " << type_string << ")" << std::endl;
 			}
 		} catch (std::runtime_error & msg){
 			std::cerr << msg.what() << std::endl;
@@ -388,15 +373,15 @@ private:
 	 */
 	void write_assertions(std::stringstream & stream, int path){
 		try {
-			if(!p_sorted_assertions.empty()){
+			if(!p_assertions_ordered.empty()){
 				stream << "; Start Assertions" << std::endl;
-
+	
 				// #1 Write the assertions gained from the database
-				std::vector<std::string> current_stream = p_sorted_assertions[path];
+				std::vector<std::string> current_stream = p_assertions_ordered[path];
 
 				for(std::vector<std::string>::iterator itor = current_stream.begin(); itor != current_stream.end(); ++itor){
 				  std::string tmp_string  = itor->substr(0, itor->size()-1);
-					stream << "(assert-soft " << tmp_string << ")" << std::endl;
+					stream << "(assert " << tmp_string << ")" << std::endl;
 				}
 
 				// #2 Introduce the soft assertions for the select variables
