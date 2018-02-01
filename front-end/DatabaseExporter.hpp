@@ -72,9 +72,8 @@ public:
    * @brief Collect Data From Database
    */
   void collect_data(){
-	this->get_free_variables();
-	this->extract_select_variables();
 	this->get_model_assertions();
+	this->get_free_variables();
   }
 
   /**
@@ -90,10 +89,12 @@ public:
 		table_entry.reg_name = argv[0];
 		table_entry.resolved_name = argv[1];
 		table_entry.type = argv[2];
+		table_entry.used = false;
 
 		if(std::find(p_free_variables.begin(), p_free_variables.end(), table_entry) == p_free_variables.end()){
 		  p_free_variables.push_back(table_entry);
 		}
+		std::cout << "Callback done " << std::endl;
 	  } else if (p_active_transition == assertions){
 		p_assertions.push_back(argv[0]);
 	  }
@@ -230,9 +231,20 @@ private:
 	std::string reg_name;
 	std::string resolved_name;
 	std::string type;
-
+	bool used;
+	
 	bool operator== (FreeVariables const & fv){
 	  return  !resolved_name.compare(fv.resolved_name);
+	}
+  };
+
+  struct ReplaceMap{
+	std::string key;
+	std::string value;
+	bool used;
+
+	void dump () {
+	  std::cout << "Key: " << key << " Value: " << value << " Used: " << std::boolalpha << used << std::endl;
 	}
   };
    
@@ -245,7 +257,6 @@ private:
   std::string p_root_dir;
   size_t p_num_of_problems;
   std::vector<std::vector<std::string> > p_assertions_ordered;
-  std::map<std::string, std::string> p_value_name_dictonary;
 
   /**
    * @brief Dummy function for database transactions
@@ -286,6 +297,28 @@ private:
 	p_active_transition = free_variables;
 	execute_database_call(query);
 	p_active_transition = init;
+	this->extract_select_variables();
+	std::vector<FreeVariables> new_variables;
+	
+	 if(!p_free_variables.empty()) {
+		int num_of_assertions = p_assertions_ordered.front().size();
+		for(int i = 0 ;i < num_of_assertions; ++i){
+		  for(int j = 0; j < p_free_variables.size(); ++j){
+			std::string name = p_free_variables[j].resolved_name;
+			std::string type = p_free_variables[j].type;
+			std::string type_string = resolve_type(type);
+			
+			FreeVariables tmp;
+			tmp.used = false;
+			tmp.type = type;
+			tmp.reg_name = name;
+			tmp.resolved_name = std::string(name + "_" +  std::to_string(i) + std::to_string(j));
+			new_variables.push_back(tmp);
+		  }
+		}
+		p_free_variables.clear();
+		std::copy(new_variables.begin(), new_variables.end(), std::back_inserter(p_free_variables));
+	  }
   }
 
   /**
@@ -300,6 +333,7 @@ private:
 	for(itor = p_free_variables.begin(); itor != p_free_variables.end(); ++itor){
 	  if(itor->resolved_name.find(select) != std::string::npos){
 		FreeVariables tmp;
+		tmp.used = false;
 		tmp.resolved_name = itor->resolved_name;
 		tmp.reg_name = itor->reg_name;
 		tmp.type = itor->type;
@@ -364,17 +398,13 @@ private:
 	  }
 
 	  if(!p_free_variables.empty()) {
-		int num_of_assertions = p_assertions_ordered.front().size();
-		for(int i = 0 ;i < num_of_assertions; ++i){
-		  for(int j = 0; j < p_free_variables.size(); ++j){
-			std::string name = p_free_variables[j].resolved_name;
-			std::string type = p_free_variables[j].type;
-			std::string type_string = resolve_type(type);
-			p_value_name_dictonary[name] = std::string(name + std::to_string(i) + std::to_string(j));
-			stream << "(declare-fun " <<  name  << i << j << " ()  " << type_string << ")" << std::endl;
+		for(auto itor = p_free_variables.begin(); itor != p_free_variables.end(); ++itor){
+		  std::string name = itor->resolved_name;
+		  std::string type = itor->type;
+		  std::string type_string = resolve_type(type);
+		  stream << "(declare-fun " <<  name << " ()  " << type_string << ")" << std::endl;
 		  }
 		}
-	  }
 	} catch (std::runtime_error & msg){
 	  std::cerr << msg.what() << std::endl;
 	}
@@ -392,12 +422,19 @@ private:
 	
 		// #1 Write the assertions gained from the database
 		std::vector<std::string> current_stream = p_assertions_ordered[path];
+		std::cout << current_stream.size() << std::endl;
 
 		for(std::vector<std::string>::iterator itor = current_stream.begin(); itor != current_stream.end(); ++itor){
 		  std::string tmp_string  = itor->substr(0, itor->size()-1);
 
 		  // We need to replace the value name in the assertions
-		  stream << "(assert " << tmp_string << ")" << std::endl;
+		  std::string values_replaced = update_value_name(tmp_string);
+		  // stream << "(assert " << tmp_string << ")" << std::endl;
+		  stream << "(assert " << values_replaced << ")" << std::endl;
+		}
+
+		for(auto itor = p_free_variables.begin(); itor != p_free_variables.end(); ++itor){
+		  itor->used = false;
 		}
 
 		// #2 Introduce the soft assertions for the select variables
@@ -431,10 +468,7 @@ private:
 	stream << check << std::endl;
 
 	// 2. Get Values of all free variables
-	std::vector<FreeVariables>::const_iterator itor;
-	std::string keyword_select = "select";
-	for(itor = p_free_variables.begin(); itor != p_free_variables.end(); ++itor){
-	  if(itor->resolved_name.find(keyword_select) != std::string::npos)
+	for(auto itor = p_select_variables.begin(); itor != p_select_variables.end(); ++itor){
 		stream << "(get-value (" << itor->resolved_name << "))" << std::endl;
 	}
   }
@@ -493,13 +527,29 @@ private:
    *@brief Update the name of the select_value variables in the assertions
    */
   std::string update_value_name(std::string const & assertion){
-	for(auto itor = p_value_name_dictonary.begin(); itor != p_value_name_dictonary.end(); ++itor){
-	  while(true){
-		if(assertion.find(itor->first)){
-
+	std::string current_input = assertion;
+	int cnt = 0;
+	
+	for(auto itor = p_free_variables.begin(); itor != p_free_variables.end(); ++itor){
+	  if(current_input.find(itor->reg_name) != std::string::npos && itor->used == false){
+		std::cout << "Input: " << current_input << std::endl;
+		std::cout << "Found Key: " << itor->reg_name << std::endl;
+		std::cout << "Replace with: " << itor->resolved_name << std::endl;
+		cnt++;
+		std::string input = current_input;
+		std::string key = itor->reg_name;
+		std::string replace_with = " " + itor->resolved_name + " ";
+		std::string regex_pattern = " " + key + " ";
+		std::regex reg(regex_pattern);
+		current_input = std::regex_replace(input, reg, replace_with);
+		itor->used = true;
+		if(cnt == p_select_variables.size()){
+		  break;
 		}
 	  }
 	}
+	std::cout << "Output: " << current_input << std::endl;
+	return current_input;
   }
 };
 
