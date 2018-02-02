@@ -421,7 +421,11 @@ private:
 
 				for(; itor != end_itor; ++itor){
 					if (boost::filesystem::is_regular_file(itor->status())){
+					  std::string extension = boost::filesystem::extension(itor->path().string());
+					  std::string smt_extension = ".smt2";
+					  if (extension.compare(smt_extension) == 0){		
 						p_files.push_back(itor->path().string());
+					  }
 					}
 				}
 			} else {
