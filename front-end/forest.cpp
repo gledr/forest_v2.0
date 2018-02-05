@@ -46,8 +46,8 @@ void run_evaluation (){
   boost::filesystem::path full_path(boost::filesystem::current_path());
   std::string path = full_path.string();
   std::shared_ptr<Evaluation> eval(new Evaluation(path));
-  eval ->compile_binary();
-
+  //eval ->compile_binary();
+  eval->show_error();
   exit(0);
 }
 

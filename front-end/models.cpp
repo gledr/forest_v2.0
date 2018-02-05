@@ -964,10 +964,11 @@ void exec_allsat() {
   //solver->dump_files();
   solver->setMaximalSolutions(10);
   solver->run();
-  solver->set_database_path("/dev/shm/forest/database.db");
+  solver->set_database_path("/tmp/smt/database.db");
   solver->store_to_database();
+  solver->write_results_opt("/tmp/smt/__allsat_results__");
   solver->get_results_from_database();
-
+  
   exit(0);
 }
 

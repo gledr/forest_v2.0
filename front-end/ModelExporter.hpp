@@ -171,6 +171,17 @@ private:
 				p_db_to_use = db_transition::target_db;
 				this->execute_database_call(models_table.str());
 				p_db_to_use = db_transition::db_init;
+
+				std::stringstream allsat_table;
+				allsat_table << "create table allsat(";
+				allsat_table << "name varchar(5000),";
+				allsat_table << "value varchar(50),";
+				allsat_table << "solution integer,";
+				allsat_table  << "path varchar(5000)";
+				allsat_table << ");";
+				p_db_to_use = db_transition::target_db;
+				this->execute_database_call(allsat_table.str());
+				p_db_to_use = db_transition::db_init;
 			}
 		} catch (std::exception const & ex){
 			std::cerr << ex.what() << std::endl;

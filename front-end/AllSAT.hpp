@@ -282,6 +282,42 @@ public:
 		}
 	}
 
+  /*
+   * @brief Export AllSAT results as file to be used by llvm-opt
+   * @param file The file where to write the results
+   */
+  void write_results_opt (std::string const & file) {
+	std::cout << "Write Solution to: " << file << std::endl;
+	std::fstream out_file(file, std::ios::out);
+	
+	std::map<std::string, std::vector<std::vector<SingleResultPair> > >::const_iterator itor;
+	std::vector<std::vector<SingleResultPair> >::const_iterator inner_itor;
+	std::vector<SingleResultPair>::const_iterator sol_itor;
+	for(itor = p_generated_results.begin(); itor != p_generated_results.end(); ++itor){
+	  int solution = 1;
+	  for(inner_itor = itor->second.begin(); inner_itor != itor->second.end(); ++inner_itor){
+		for(sol_itor = inner_itor->begin(); sol_itor != inner_itor->end(); ++sol_itor){
+		  std::string to_insert = sol_itor->reg_val;
+		  std::string as_hex = sol_itor->reg_val;
+		  if(to_insert[0] == '#'){
+			std::stringstream convert;
+			as_hex[0] = '0';
+			convert << std::hex << as_hex;
+			int as_decimal;
+			convert >> as_decimal;
+			std::stringstream to_decimal;
+			to_decimal << as_decimal;
+			to_decimal >> to_insert;
+		  }
+		  out_file << sol_itor->reg_name << "," << to_insert << "," << solution << "," << itor->first << std::endl;
+		}
+		solution++;
+	  }
+	}
+	out_file.close();
+  }
+  
+
 	/**
 	 * @brief Set the path to the used database
 	 *

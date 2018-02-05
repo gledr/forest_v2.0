@@ -1,3 +1,19 @@
+void __VERIFIER_assert (int val);
+
+#define ADD 0
+#define SUB 1
+#define INC 2
+#define DEC 3
+
+int main () {
+	int c_side_a_in = 2;
+	int c_side_b_in = 2;
+	int c_opcode_in = DEC;
+	int c_expected_out = 1;
+	int c_expected_zero_out = 1;
+	int result_out = 0;
+	int zero_out;
+
  
 	switch(c_opcode_in) {
 	case ADD: 

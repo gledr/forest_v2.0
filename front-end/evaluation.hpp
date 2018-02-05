@@ -18,7 +18,6 @@ public:
 	}
 
 	void compile_binary () {
-
 		if (p_source_files.empty()){
 			read_directory();
 		}
@@ -62,6 +61,7 @@ public:
 			}
 			c2.wait();
 
+			std::cout << "c2 done" << std::endl;
 			cmd.clear();
 			line.clear();
 
@@ -87,13 +87,90 @@ public:
 				std::cerr << line << std::endl;
 			}
 			c4.wait();
-
 		}
-
 	}
 
 	std::string get_directory () const {
 		return p_directory;
+	}
+
+	void show_error(){
+		if (p_source_files.empty()){
+			read_directory();
+		}
+		if (!p_source_files.empty()){
+			// Copy file to tmp folder
+			boost::filesystem::copy_file(p_source_files.front().path + p_source_files.front().name, "/tmp/smt/"
+				+ p_source_files.front().name, boost::filesystem::copy_option::overwrite_if_exists);
+
+			std::string llvm_path = "/usr/src/llvm-3.7/Debug+Asserts/bin/";
+			std::string clang = llvm_path;
+			if (p_source_files.front().type == SourceFile::eType::c){
+				clang += "clang";
+			} else {
+				clang += "clang++";
+			}
+			std::string opt = llvm_path + "opt";
+			std::string debug_pass = "/usr/src/llvm-3.7/Debug+Asserts/lib/ForestDebug.so";
+
+			boost::process::ipstream is; //reading pipe-stream
+			std::string cmd = " -c -O0 -g -emit-llvm /tmp/smt/" + p_source_files.front().name + " -o /tmp/smt/file.bc";
+			boost::process::child c1(clang +  cmd, boost::process::std_out > is);
+
+			std::string line;
+			while (c1.running() && std::getline(is, line) && !line.empty()){
+				std::cerr << line << std::endl;
+			}
+			c1.wait();
+
+			cmd.clear();
+			line.clear();
+
+			cmd = " -load " + debug_pass +
+				  " -loop_latch_info -insert_select_variables " +
+				  "/tmp/smt/file.bc -o /tmp/smt/file2.bc";
+			boost::process::ipstream is2; //reading pipe-stream
+			boost::process::child c2(opt +  cmd, boost::process::std_out > is2);
+
+			while (c2.running() && std::getline(is2, line) && !line.empty()){
+				std::cerr << line << std::endl;
+			}
+			c2.wait();
+
+			cmd.clear();
+			line.clear();
+
+			cmd = " -load " + debug_pass +
+				  " -read_debug " +
+			      "/tmp/smt/file2.bc -o /tmp/smt/file3.bc";
+			boost::process::ipstream is3; //reading pipe-stream
+			boost::process::child c3(opt +  cmd, boost::process::std_out > is3);
+
+			while (c3.running() && std::getline(is3, line) && !line.empty()){
+				std::cerr << line << std::endl;
+			}
+			c3.wait();
+
+			std::fstream solution("/tmp/smt/__resolved_allsat_solutions__", std::ios::in);
+			std::string solution_line;
+			std::getline(solution,solution_line);
+			solution.close();
+
+			std::cout << "Line: " << solution_line << std::endl;
+			
+			cmd.clear();
+			line.clear();
+
+			cmd = "/usr/bin/emacs +" + solution_line + " /tmp/smt/" + p_source_files.front().name;
+
+			boost::process::ipstream is4; //reading pipe-stream
+			boost::process::child c4(cmd, boost::process::std_out > is4);
+
+			while (c4.running() && std::getline(is4, line) && !line.empty()){
+				std::cerr << line << std::endl;
+			}
+			c4.wait();
+		}
 	}
 
 private:
@@ -112,8 +189,6 @@ private:
 
 	std::string p_directory;
 	std::vector<SourceFile> p_source_files;
-
-
 
 	void read_directory(){
 		try {
@@ -168,9 +243,6 @@ private:
 			std::cerr << msg.what() << std::endl;
 		}
 	}
-
 };
-
-
 
 #endif /* EVALUATION_HPP_ */

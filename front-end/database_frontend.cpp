@@ -106,7 +106,6 @@ void clean_tables(){
 	action << "drop table measurements;";
 	action << "drop table frontend;";
 	action << "drop table check_xml;";
-	action << "drop table allsat;";
 	db_command( action.str() );
 
 	action.str("");
@@ -170,15 +169,6 @@ void clean_tables(){
 	action << "path varchar(5000)";
 	action << ");";
 	db_command( action.str() );
-	
-	action.str("");
-	action << "create table allsat(";
-	action << "name varchar(5000),";
-	action << "value varchar(50),";
-	action << "solution integer,";
-	action << "path varchar(5000)";
-	action << ");";
-	db_command(action.str());
 
 	action.str("");
 	action << "create table frontend(";
