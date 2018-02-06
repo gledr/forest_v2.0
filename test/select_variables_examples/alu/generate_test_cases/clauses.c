@@ -10,7 +10,7 @@
 	  result_out = c_side_a_in + 1;
 	  break;
 	case DEC: 
-	  result_out = c_side_a_in - 1;
+	  result_out = c_side_a_in + 1;
 	  break;
 	}
   

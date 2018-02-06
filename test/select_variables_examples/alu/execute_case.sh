@@ -1,8 +1,12 @@
 #! /bin/bash
 
+if [ -e gen ]; then
+    rm gen
+fi 
 
-rm -rf /tmp/smt
-rm gen
+if [ -e /tmp/smt ]; then
+    rm -rf /tmp/smt
+fi    
 
 cd generate_test_cases
 g++ main.cpp -o gen
@@ -22,4 +26,6 @@ done
 forest -export_allsat
 forest -execute_allsat
 forest -run_evaluation
+
+rm main.c
 

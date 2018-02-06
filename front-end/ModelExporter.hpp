@@ -6,6 +6,8 @@
 #include <boost/filesystem.hpp>
 #include <sqlite3.h>
 
+#undef DEBUG
+
 class ModelExporter{
 public:
 	ModelExporter (std::string path_from, std::string path_to){
@@ -34,8 +36,7 @@ public:
 		std::string path = "/tmp/smt/database.db";
 		std::string tmp_file = "/tmp/smt/__num_of_problems__";
 		boost::filesystem::remove(path);
-		boost::filesystem::remove(tmp_file);
-		
+		boost::filesystem::remove(tmp_file);	
 	}
 
 	/**
@@ -54,7 +55,9 @@ public:
 
 				if(std::find(p_free_variables.begin(), p_free_variables.end(), table_entry) == p_free_variables.end()){
 					p_free_variables.push_back(table_entry);
+#ifdef DEBUG
 					std::cout << "inserting " << table_entry.resolved_name << std::endl;
+#endif
 				}
 			} else if (p_active_transition == models){
 				assert(argc == 3);

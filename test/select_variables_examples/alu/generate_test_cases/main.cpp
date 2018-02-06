@@ -5,6 +5,8 @@
 #include <fstream>
 #include <cassert>
 
+//#define DEBUG
+
 #define ADD "ADD"
 #define SUB "SUB"
 #define INC "INC"
@@ -113,9 +115,7 @@ void fill_cases(){
 }
 
 void get_case(int _case, std::stringstream & stream){
-  std::cout << _case << std::endl;
 	std::string a = cases[_case]["c_side_a_in"];
-	std::cout << a <<  std::endl;
 	stream << "\tint c_side_a_in = " << a << ";" << std::endl;
 	stream << "\tint c_side_b_in = " << cases[_case]["c_side_b_in"] << ";" << std::endl;
 	stream << "\tint c_opcode_in = " << cases[_case]["c_opcode_in"] << ";" << std::endl;
@@ -138,7 +138,9 @@ int main (int argc, char * argv[]) {
 	assert (cases.size() >= _case);
 	get_case(_case, file);
 	get_clauses(file);
+#ifdef DEBUG
 	std::cout << file.str() << std::endl;
+#endif
 	std::fstream out_file;
 	out_file.open("main.c", std::ios::out);
 	out_file << file.str();

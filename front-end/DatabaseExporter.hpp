@@ -11,7 +11,9 @@
 #include <regex>
 #include <map>
 
-#define DEBUG
+#ifdef DEBUG
+#undef DEBUG
+#endif
 
 
 /**
@@ -95,7 +97,6 @@ public:
 		if(std::find(p_free_variables.begin(), p_free_variables.end(), table_entry) == p_free_variables.end()){
 		  p_free_variables.push_back(table_entry);
 		}
-		std::cout << "Callback done " << std::endl;
 	  } else if (p_active_transition == assertions){
 		p_assertions.push_back(argv[0]);
 	  }
@@ -424,7 +425,6 @@ private:
 	
 		// #1 Write the assertions gained from the database
 		std::vector<std::string> current_stream = p_assertions_ordered[path];
-		std::cout << current_stream.size() << std::endl;
 
 		for(std::vector<std::string>::iterator itor = current_stream.begin(); itor != current_stream.end(); ++itor){
 		  std::string tmp_string  = itor->substr(0, itor->size()-1);
@@ -534,9 +534,11 @@ private:
 	
 	for(auto itor = p_free_variables.begin(); itor != p_free_variables.end(); ++itor){
 	  if(current_input.find(itor->reg_name) != std::string::npos && itor->used == false){
+#ifdef DEBUG
 		std::cout << "Input: " << current_input << std::endl;
 		std::cout << "Found Key: " << itor->reg_name << std::endl;
 		std::cout << "Replace with: " << itor->resolved_name << std::endl;
+#endif
 		cnt++;
 		std::string input = current_input;
 		std::string key = itor->reg_name;
@@ -550,7 +552,9 @@ private:
 		}
 	  }
 	}
+#ifdef DEBUG
 	std::cout << "Output: " << current_input << std::endl;
+#endif
 	return current_input;
   }
 };
