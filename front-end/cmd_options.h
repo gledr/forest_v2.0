@@ -25,7 +25,8 @@
 
 
 #include <vector>
-#include "./tinyxml.h"
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/xml_parser.hpp>
 #include <string>
 #include <map>
 #include "utils_frontend.h"
@@ -45,7 +46,7 @@ float cmd_option_float(string option);
 vector<string> cmd_option_string_vector(string option);
 vector<int> cmd_option_int_vector(string option);
 vector<float> cmd_option_float_vector(string option);
-void load_file_options(string file);
+void load_file_options(std::string const & file);
 void load_default_options();
 void load_file_options();
 void cmd_option_set(string key, string value );

@@ -127,56 +127,26 @@ vector<float> cmd_option_float_vector(string option){
 	return vector_float;
 }
 
-void load_file_options(string file){
+void load_file_options(std::string const & file){
 
-	ifstream input(file.c_str());
-	string line;
-	
-	if( !getline( input, line ) )
-		return;
-	
+  boost::property_tree::ptree root_tree;
+  boost::property_tree::read_xml(file, root_tree);
+  boost::property_tree::ptree xml_options = root_tree.get_child("options");
 
-
-	TiXmlDocument doc(file.c_str()); // XML Document
-	doc.LoadFile();
-	
-	std::string m_name; // Name
-	
-	TiXmlHandle hDoc(&doc); // XML handler
-	TiXmlElement* pElem; // Each element
-	TiXmlHandle hRoot(0); // XML Root
-	
-	pElem=hDoc.FirstChildElement("options").Element();
-	m_name=pElem->Value();
-	
-	hRoot=TiXmlHandle(pElem);
-
-	pElem=hRoot.FirstChild().Element();
-	for( ; pElem; pElem=pElem->NextSiblingElement()){
-
-
-		bool found = false;
-		for( map<string, string>::iterator it = options.begin(); it != options.end(); it++){
-
-
-			if( it->first == pElem->Attribute("key") ){
-				found = 1;
-				break;
-			} else {
-				found = 0;
-			}
-		}
-
-
-		if(found){
-			options[pElem->Attribute("key")] += ( string( "@" ) + pElem->Attribute("value") );
+  for(auto pos = xml_options.begin(); pos != xml_options.end(); ++pos){
+	for (auto child = pos->second.begin(); child != pos->second.end(); ++child){
+	  std::string key = child->second.get_child("key").data();
+	  std::string value = child->second.get_child("value").data();
+	 
+	  for (auto itor = options.begin(); itor != options.end(); ++itor){
+		if(itor->first == key){
+		  options[key] += (std::string("@") + value);
 		} else {
-			options[pElem->Attribute("key")] = pElem->Attribute("value");
+		  options[key] = value;
 		}
-
-
-	}
-	
+	  }	  
+	}	
+  }
 }
 
 void load_default_options(){

@@ -22,7 +22,6 @@
 #ifndef _FOREST_H_
 #define _FOREST_H_
 
-#include "./tinyxml.h"
 #include <string>
 #include <sstream>
 #include <vector>
