@@ -948,7 +948,8 @@ void export_allsat (){
   std::string const db_location = "/tmp/smt/database.db";
   std::string const target_folder = "/tmp/smt";
   std::string const filename_skeleton = "test.smt2";
-  std::shared_ptr<DatabaseExporter> exporter(new DatabaseExporter(db_location));
+  int const errors = cmd_option_int("errors_in_design");
+  std::shared_ptr<DatabaseExporter> exporter(new DatabaseExporter(db_location, errors));
   exporter->OpenDatabase();
   exporter->set_directory(target_folder);
   exporter->collect_data();

@@ -19,4 +19,5 @@ done
 
 forest -export_allsat
 forest -execute_allsat
+forest -run_evaluation
 

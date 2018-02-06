@@ -55,14 +55,20 @@ void make_bc(){
 	cmd << "opt -load " << llvm_path << "/Debug+Asserts/lib/ForestDebug.so " << cmd_option_str("debug_passes") << "  < file.bc > file-2.bc";
 	systm(cmd.str().c_str());
 
-	// First optimization pass
-	cmd.str("");
-	cmd << "opt -load " << llvm_path << "/Debug+Asserts/lib/ForestInstr.so " << cmd_option_str("optim_passes") << " -instr_fill_names < file-2.bc > file-3.bc";
-	systm(cmd.str().c_str());
-
 	// Second optimization pass
 	cmd.str("");
-	cmd << "opt -load " << llvm_path << "/Debug+Asserts/lib/ForestInstr.so -instr_all < file-3.bc > file-4.bc";
+	cmd << "opt -strip-debug  < file-2.bc > file-3.bc";
+	systm(cmd.str().c_str());
+	
+
+	// Third optimization pass
+	cmd.str("");
+	cmd << "opt -load " << llvm_path << "/Debug+Asserts/lib/ForestInstr.so " << cmd_option_str("optim_passes") << " -instr_fill_names < file-3.bc > file-4.bc";
+	systm(cmd.str().c_str());
+
+	// Fourth  optimization pass
+	cmd.str("");
+	cmd << "opt -load " << llvm_path << "/Debug+Asserts/lib/ForestInstr.so -instr_all < file-4.bc > file-5.bc";
 	systm(cmd.str().c_str());
 
 	end_pass("make_bc");
@@ -184,7 +190,7 @@ void final(){
 	if(cmd_option_bool("link_bc")){
 		// Link
 		cmd.str("");
-		cmd << "llvm-link -o=" << tmp_file("final.bc") << " " << base_path << "/lib/forest.a file-4.bc";
+		cmd << "llvm-link -o=" << tmp_file("final.bc") << " " << base_path << "/lib/forest.a file-5.bc";
 		systm(cmd.str().c_str());
 
 		// Optimization
@@ -210,7 +216,7 @@ void final(){
 	} else {
 		// From .bc to .s
 		cmd.str("");
-		cmd << "clang++ -c file-4.bc -o file-4.o";
+		cmd << "clang++ -c file-5.bc -o file-5.o";
 		systm(cmd.str().c_str());
 
 		// From .s to .o
@@ -220,7 +226,7 @@ void final(){
 
 		// link
 		cmd.str("");
-		cmd << "clang++ file-4.o " << base_path << "/lib/forest.a" << " -lpthread -ldl -lrt -lboost_system -lboost_filesystem -o " << output_file;
+		cmd << "clang++ file-5.o " << base_path << "/lib/forest.a" << " -lpthread -ldl -lrt -lboost_system -lboost_filesystem -o " << output_file;
 		systm(cmd.str().c_str());
 	}
 
@@ -670,8 +676,6 @@ void make_initial_bc(){
 			
 		}
 
-		
-
 		if(cmd_option_bool("rm_include")){
 			cmd.str("");
 			cmd << "sed -i 's/#include.*//g' " << tmp_file("file.c*");
@@ -710,11 +714,10 @@ void make_initial_bc(){
 		// Compile code to BC
 		cmd.str("");
 		if(cmd_option_str("c_standard") == "C")
-			cmd << "clang " << cmd_option_str("compiler_flags") << " -O0 -S -emit-llvm -D NO_INIT " << bigsize_str << cflags << " -c file.c -o file.bc";
+			cmd << "clang " << cmd_option_str("compiler_flags") << " -O0 -g -S -emit-llvm -D NO_INIT " << bigsize_str << cflags << " -c file.c -o file.bc";
 		else
 			cmd << "clang++ -O0 -S -std=c++11 -emit-llvm -D NO_INIT " << bigsize_str << cflags << " -c file.cpp -o file.bc";
 		systm(cmd.str().c_str());
-
 	}
 
 	if(cmd_option_bool("with_libs")){
@@ -732,6 +735,10 @@ void make_initial_bc(){
 		cmd << "mv " << tmp_file("file-3.bc") << " " << tmp_file("file.bc");
 		systm(cmd.str().c_str());
 	}
+
+	cmd.str("");
+	cmd << "cp " << prj_file("blacklist.txt") << " /dev/shm/forest/blacklist.txt";
+	systm(cmd.str().c_str());
 }
 
 void run(){
@@ -845,10 +852,6 @@ void compare_libs(){
 	cmd.str("");
 	cmd << "meld file-1.ll file-3.ll";
 	systm(cmd.str());
-
-
-	
-
 }
 
 void list_external_functions(){

@@ -43,6 +43,8 @@
 #include <map>
 #include <set>
 
+#define DEBUG
+//#define BLACKLIST
 
 using namespace llvm;
 using namespace std;
@@ -107,16 +109,60 @@ typedef struct ReplaceAfter {
 
 struct SelectVariables: public ModulePass {
   static char ID;
-  SelectVariables() : ModulePass(ID) {}
+  SelectVariables() : ModulePass(ID) {
+	this->read_blacklist("/dev/shm/forest/blacklist.txt");
+  }
+
+  std::vector<int> p_blacklisted_lines;
+
+  void read_blacklist(std::string const & blacklist_file){
+	std::fstream in_file(blacklist_file, std::ios::in);
+	std::string line;
+	while(std::getline(in_file, line)){
+	  std::stringstream tmp;
+	  tmp << line;
+	  int as_int;
+	  tmp >> as_int;
+	  p_blacklisted_lines.push_back(as_int);
+	}
+  }
+
+  bool blacklisted_instruction (Instruction const & ins){
+	DebugLoc debug_infos = ins. getDebugLoc();
+
+	if (debug_infos.get()){
+	  size_t line_num = debug_infos. getLine();
+	  if(std::find(p_blacklisted_lines.begin(), p_blacklisted_lines.end(), line_num ) == p_blacklisted_lines.end()){
+		return false;
+	  } else{
+#ifdef BLACKLIST
+		errs () << "Instruction: " << ins << "\n";
+		errs () << "@LineNum: " << line_num << "\n";
+		errs () << "Is BLACKLISTED\n";
+#endif
+		return true;
+	  }
+	} else {
+	  return false;
+	}
+  }
+
+  void dump_blacklisted_lines () {
+	for(int i = 0; i < p_blacklisted_lines.size(); ++i){
+	  errs () << p_blacklisted_lines[i] << "\n";
+	}
+  }
   
   virtual bool runOnModule(Module &M) {
  
     vector<ReplaceAfter> values_to_replace;
-    
+	// dump_blacklisted_lines();
     for (Module::iterator fn = M.begin(); fn != M.end(); ++fn ){
 	  for (Function::iterator bb = fn->begin(); bb != fn->end(); ++bb){
 		for (BasicBlock::iterator in = bb->begin(); in != bb->end(); ++in){
-
+		  if (blacklisted_instruction(*in)){
+			continue;
+		  }
 		  if(BinaryOperator::classof(in)){
 #ifdef DEBUG
 			errs () << "Binary Operator Detected!\n";
@@ -156,9 +202,28 @@ struct SelectVariables: public ModulePass {
 		  }
 		  else if (ICmpInst::classof(in)){
 #ifdef DEBUG
-			errs () << "Compare Instruction Detected!\n";
+			errs () << "Compare Operator Detected!\n";
 			errs () << *in << "\n";
 #endif
+			BasicBlock::iterator insertpos = in; insertpos++;
+			
+			AllocaInst* enable_ptr = new AllocaInst(Type::getInt1Ty( M.getContext() ), "select_enable", insertpos);
+			AllocaInst* val_ptr    = new AllocaInst(in->getType(), "select_value", insertpos);
+	
+			LoadInst* enable = new LoadInst(enable_ptr,"",insertpos);
+			LoadInst* val = new LoadInst(val_ptr,"",insertpos);
+	      
+			SelectInst * SelectInstruction =  SelectInst::Create (enable,val, in, "select_result", insertpos);
+
+			// As we manipulate the result of a binary instruction we also have to make sure, that our introduces result
+			// ends up in the indtended register!
+			ReplaceAfter val_to_repl = {in, SelectInstruction };
+			values_to_replace.push_back(val_to_repl);
+					
+#ifdef DEBUG
+			errs () << "Value ID: " << in->getValueID() << "\n";
+			errs () << "Address" << in << "\n";
+#endif		
 		  }
 		}
       }
@@ -359,10 +424,8 @@ struct ReadDebugInformation : public ModulePass {
 			break;		
 		  }
 		  pos++;
-      }
+		}
 		
-
-
 		if(!found_it){		
 		  continue;
 		} else {	
@@ -388,7 +451,7 @@ struct ReadDebugInformation : public ModulePass {
 	  }
   
   
-  }
+	}
 	return true;
   }
 

@@ -27,8 +27,9 @@ public:
    *
    * @param path Database-File
    */
-  DatabaseExporter(std::string path){
+  DatabaseExporter(std::string path, int const errors){
 	p_db = 0;
+	p_errors = errors;
 	p_path = path;
 	p_active_transition = init;
 	p_num_of_problems = 0;
@@ -257,6 +258,7 @@ private:
   std::string p_root_dir;
   size_t p_num_of_problems;
   std::vector<std::vector<std::string> > p_assertions_ordered;
+  int p_errors;
 
   /**
    * @brief Dummy function for database transactions
@@ -447,7 +449,7 @@ private:
 		std::vector<FreeVariables> tmp;
 		std::back_insert_iterator< std::vector<FreeVariables> > back_it (tmp);
 		std::copy(p_select_variables.begin(), p_select_variables.end(),back_it);
-		std::string minimum_assertion = this->minimize_select_variables(tmp, 1);
+		std::string minimum_assertion = this->minimize_select_variables(tmp, p_errors);
 		stream << minimum_assertion << std::endl;
 	  }
 	} catch (...){
