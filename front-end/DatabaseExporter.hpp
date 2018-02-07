@@ -11,9 +11,7 @@
 #include <regex>
 #include <map>
 
-#ifdef DEBUG
-#undef DEBUG
-#endif
+#define DEBUG
 
 
 /**
@@ -77,6 +75,8 @@ public:
   void collect_data(){
 	this->get_model_assertions();
 	this->get_free_variables();
+	this->split_free_variables();
+	this->show_replace_groups();
   }
 
   /**
@@ -92,7 +92,7 @@ public:
 		table_entry.reg_name = argv[0];
 		table_entry.resolved_name = argv[1];
 		table_entry.type = argv[2];
-		table_entry.used = false;
+		table_entry.used = 0;
 
 		if(std::find(p_free_variables.begin(), p_free_variables.end(), table_entry) == p_free_variables.end()){
 		  p_free_variables.push_back(table_entry);
@@ -233,28 +233,20 @@ private:
 	std::string reg_name;
 	std::string resolved_name;
 	std::string type;
-	bool used;
+	size_t used;
 	
 	bool operator== (FreeVariables const & fv){
 	  return  !resolved_name.compare(fv.resolved_name);
 	}
   };
 
-  struct ReplaceMap{
-	std::string key;
-	std::string value;
-	bool used;
-
-	void dump () {
-	  std::cout << "Key: " << key << " Value: " << value << " Used: " << std::boolalpha << used << std::endl;
-	}
-  };
    
   sqlite3 * p_db;
   std::string p_path;
   active_transition p_active_transition;
   std::vector<FreeVariables> p_free_variables;
   std::vector<FreeVariables> p_select_variables;
+  std::vector<std::vector<FreeVariables> > p_free_variables_replace;
   std::vector<std::string> p_assertions;
   std::string p_root_dir;
   size_t p_num_of_problems;
@@ -312,7 +304,7 @@ private:
 			std::string type_string = resolve_type(type);
 			
 			FreeVariables tmp;
-			tmp.used = false;
+			tmp.used = 0;
 			tmp.type = type;
 			tmp.reg_name = name;
 			tmp.resolved_name = std::string(name + "_" +  std::to_string(i) + std::to_string(j));
@@ -336,7 +328,7 @@ private:
 	for(itor = p_free_variables.begin(); itor != p_free_variables.end(); ++itor){
 	  if(itor->resolved_name.find(select) != std::string::npos){
 		FreeVariables tmp;
-		tmp.used = false;
+		tmp.used = 0;
 		tmp.resolved_name = itor->resolved_name;
 		tmp.reg_name = itor->reg_name;
 		tmp.type = itor->type;
@@ -426,17 +418,22 @@ private:
 		// #1 Write the assertions gained from the database
 		std::vector<std::string> current_stream = p_assertions_ordered[path];
 
+		size_t current_assertion_block = 0;
 		for(std::vector<std::string>::iterator itor = current_stream.begin(); itor != current_stream.end(); ++itor){
 		  std::string tmp_string  = itor->substr(0, itor->size()-1);
 
 		  // We need to replace the value name in the assertions
-		  std::string values_replaced = update_value_name(tmp_string);
-		  // stream << "(assert " << tmp_string << ")" << std::endl;
-		  stream << "(assert " << values_replaced << ")" << std::endl;
+		  std::string values_replaced = update_value_name(tmp_string, 2, current_assertion_block);
+		  //stream << "(assert " << tmp_string << ")" << std::endl;
+		  std::vector<std::string> splited_assertions = split(values_replaced, ",");
+		  for(auto ass = splited_assertions.begin(); ass != splited_assertions.end(); ++ass){
+			stream << "(assert " << *ass << ")" << std::endl;
+		  }
+		  current_assertion_block++;
 		}
 
 		for(auto itor = p_free_variables.begin(); itor != p_free_variables.end(); ++itor){
-		  itor->used = false;
+		  itor->used = 0;
 		}
 
 		// #2 Introduce the soft assertions for the select variables
@@ -528,27 +525,32 @@ private:
   /*
    *@brief Update the name of the select_value variables in the assertions
    */
-  std::string update_value_name(std::string const & assertion){
+  std::string update_value_name(std::string const & assertion, int const problems, int const group){
+	std::cout << "Group: " << group << std::endl;
+	std::cout << "Problems: " << problems << std::endl;
 	std::string current_input = assertion;
-	int cnt = 0;
-	
-	for(auto itor = p_free_variables.begin(); itor != p_free_variables.end(); ++itor){
-	  if(current_input.find(itor->reg_name) != std::string::npos && itor->used == false){
+
+	for(int i = 0; i < problems; ++i){
+	  int cnt = 0;
+
+	  for(auto itor = p_free_variables_replace[group].begin(); itor != p_free_variables_replace[group].end(); ++itor){
+		if(current_input.find(itor->reg_name) != std::string::npos && itor->used < problems){
 #ifdef DEBUG
-		std::cout << "Input: " << current_input << std::endl;
-		std::cout << "Found Key: " << itor->reg_name << std::endl;
-		std::cout << "Replace with: " << itor->resolved_name << std::endl;
+		  std::cout << "Input: " << current_input << std::endl;
+		  std::cout << "Found Key: " << itor->reg_name << std::endl;
+		  std::cout << "Replace with: " << itor->resolved_name << std::endl;
 #endif
-		cnt++;
-		std::string input = current_input;
-		std::string key = itor->reg_name;
-		std::string replace_with = " " + itor->resolved_name + " ";
-		std::string regex_pattern = " " + key + " ";
-		std::regex reg(regex_pattern);
-		current_input = std::regex_replace(input, reg, replace_with);
-		itor->used = true;
-		if(cnt == p_select_variables.size()){
-		  break;
+		  cnt++;
+		  std::string input = current_input;
+		  std::string key = itor->reg_name;
+		  std::string replace_with = " " + itor->resolved_name + " ";
+		  std::string regex_pattern = " " + key + " ";
+		  std::regex reg(regex_pattern);
+		  current_input = std::regex_replace(input, reg, replace_with);
+		  itor->used++;
+		  if(cnt == (p_select_variables.size() * problems)){
+			break;
+		  }
 		}
 	  }
 	}
@@ -557,6 +559,61 @@ private:
 #endif
 	return current_input;
   }
+
+  /**
+   *@brief Split free variables into groups for each assertion
+   */
+  void split_free_variables () {
+	size_t group_size = p_select_variables.size();
+	int cnt = 0;
+	std::vector<FreeVariables> group;
+	
+	for(auto itor = p_free_variables.begin(); itor!= p_free_variables.end(); ++itor){
+	  group.push_back(*itor);
+	  cnt++;
+	  if(cnt == group_size){
+		p_free_variables_replace.push_back(group);
+		cnt = 0;
+		group.clear();
+	  }	
+	}
+  }
+
+  /**
+   * @brief Split a string at delimiter and pack them into a vector
+   *
+   * @param str The string to split
+   * @param delim The delimiter to use
+   */
+  std::vector<std::string> split(std::string const & str, std::string const & delim) {
+	std::vector<std::string> tokens;
+	size_t prev = 0;
+	size_t pos = 0;
+
+	do
+	  {
+		pos = str.find(delim, prev);
+		if (pos == std::string::npos) pos = str.length();
+		std::string token = str.substr(prev, pos-prev);
+		if (!token.empty()) tokens.push_back(token);
+		prev = pos + delim.length();
+	  }
+	while (pos < str.length() && prev < str.length());
+
+	return tokens;
+  }
+
+  void show_replace_groups(){
+	int cnt = 0;
+	for(auto itor = p_free_variables_replace.begin(); itor != p_free_variables_replace.end(); ++itor){
+	  std::cout << "Group: " << cnt << std::endl;
+	  cnt++;
+	  for(auto inner_itor = itor->begin(); inner_itor != itor->end(); ++inner_itor){
+		std::cout << inner_itor->reg_name << " " << inner_itor->resolved_name << std::endl;
+	  }
+	}
+  }
+  
 };
 
 #endif /* DATABASEEXPORTER_HPP_ */

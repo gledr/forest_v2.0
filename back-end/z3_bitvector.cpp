@@ -88,62 +88,57 @@ void Z3BitVector::dump_problem_all_sat (string & filename_base, vector<string> &
 }
 
 void Z3BitVector::dump_header(FILE* file){
-
 	fprintf(file,"(set-option :produce-models true)\n");
-
 }
+
 
 void Z3BitVector::dump_variables(FILE* file){
 
-	//// try to avoid returning if not free variables !
+  //// try to avoid returning if not free variables !
 	
-	//if(!free_variables.size()){
-	//	printf("Empty_free_variables\n");
-	//	assert(0 && "Empty free_variables");
-	//}
+  //if(!free_variables.size()){
+  //	printf("Empty_free_variables\n");
+  //	assert(0 && "Empty free_variables");
+  //}
 
-	if(!free_variables.size()) return;
-	assert(free_variables.size() && "Empty free_variables");
+  if(!free_variables.size()) return;
+  assert(free_variables.size() && "Empty free_variables");
 
-	//printf("\e[31m Dump_variables free_variables.size() %lu\e[0m\n", free_variables.size() );
+  //printf("\e[31m Dump_variables free_variables.size() %lu\e[0m\n", free_variables.size() );
 
+  for( set<NameAndPosition>::iterator it = free_variables.begin(); it != free_variables.end(); it++ ){
 
-	for( set<NameAndPosition>::iterator it = free_variables.begin(); it != free_variables.end(); it++ ){
+	string position = it->position;
+	string type = gettype(it->name);
+	int bits;
 
-		string position = it->position;
-		string type = gettype(it->name);
-		int bits;
+	assert(position != "" && "Unknown variable");
+	//printf("dump_variables_type %s\n", type.c_str());
 
-		assert(position != "" && "Unknown variable");
-		//printf("dump_variables_type %s\n", type.c_str());
-
-		if(type == "IntegerTyID32") {
-			bits = 32;
-			fprintf(file,"(declare-const %s (_ BitVec %d))\n", position.c_str(), bits);
-		} else if(type == "IntegerTyID1") {
-			bits = 1;
-			fprintf(file,"(declare-const %s bool)\n", position.c_str(), bits);
-		} else if(type == "IntegerTyID64") {
-			bits = 64;
-			fprintf(file,"(declare-const %s (_ BitVec %d))\n", position.c_str(), bits);
-		} else if(type == "IntegerTyID16") {
-			bits = 16;
-			fprintf(file,"(declare-const %s (_ BitVec %d))\n", position.c_str(), bits);
-		} else if(type == "IntegerTyID8") {
-			bits = 8;
-			fprintf(file,"(declare-const %s (_ BitVec %d))\n", position.c_str(), bits);
-		} else if(type == "FloatTyID") {
-			fprintf(file,"(declare-const %s (_ FP 11 53))\n", position.c_str());
-		} else if(type == "PointerTyID") {
-			bits = 64;
-			fprintf(file,"(declare-const %s (_ BitVec %d))\n", position.c_str(), bits);
-		} else {
-			if(isdriver) assert(0 && "Unknown Type");
-		}
-
+	if(type == "IntegerTyID32") {
+	  bits = 32;
+	  fprintf(file,"(declare-const %s (_ BitVec %d))\n", position.c_str(), bits);
+	} else if(type == "IntegerTyID1") {
+	  bits = 1;
+	  fprintf(file,"(declare-const %s bool)\n", position.c_str(), bits);
+	} else if(type == "IntegerTyID64") {
+	  bits = 64;
+	  fprintf(file,"(declare-const %s (_ BitVec %d))\n", position.c_str(), bits);
+	} else if(type == "IntegerTyID16") {
+	  bits = 16;
+	  fprintf(file,"(declare-const %s (_ BitVec %d))\n", position.c_str(), bits);
+	} else if(type == "IntegerTyID8") {
+	  bits = 8;
+	  fprintf(file,"(declare-const %s (_ BitVec %d))\n", position.c_str(), bits);
+	} else if(type == "FloatTyID") {
+	  fprintf(file,"(declare-const %s (_ FP 11 53))\n", position.c_str());
+	} else if(type == "PointerTyID") {
+	  bits = 64;
+	  fprintf(file,"(declare-const %s (_ BitVec %d))\n", position.c_str(), bits);
+	} else {
+	  if(isdriver) assert(0 && "Unknown Type");
 	}
-	
-
+  }
 }
 
 
@@ -171,18 +166,15 @@ string Z3BitVector::internal_representation(int in, string type){
 	return hex_representation_2(in, type);
 }
 
+
 void Z3BitVector::dump_extra(FILE* file){
 }
-
-
 
 
 map<set<pair<string, int> > , int > Z3BitVector::get_idx_val(string base,string idx_content, vector<string> indexes, int first_address, int last_address){
 
 	debug && printf("\e[32m get_idx_val %s %d %d %lu\e[0m\n", base.c_str(), first_address, last_address, indexes.size());
 	
-
-
 	set<string> index_vars = variables[base].indexes;
 	for( vector<string>::iterator it = indexes.begin(); it != indexes.end(); it++ ){
 		debug && printf("\e[32m index \e[0m %s\n", it->c_str());
@@ -263,11 +255,6 @@ map<set<pair<string, int> > , int > Z3BitVector::get_idx_val(string base,string 
 
 		if(exclusions.size() > 0)
 			fprintf(ftmp, "(assert %s)\n", internal_condition(excl_expr.str()).c_str());
-
-
-
-
-
 
 		fprintf(ftmp, "(check-sat)\n");
 
@@ -353,12 +340,12 @@ map<set<pair<string, int> > , int > Z3BitVector::get_idx_val(string base,string 
 
 void Z3BitVector::representation_constants(string& condition){
 
-
 	vector<string> types;
 	types.push_back("IntegerTyID32");
 	types.push_back("IntegerTyID16");
 	types.push_back("IntegerTyID64");
 	types.push_back("IntegerTyID8");
+	types.push_back("IntegerTyID1");
 	types.push_back("DoubleTyID");
 	types.push_back("PointerTyID");
 	types.push_back("Pointer");
@@ -384,19 +371,13 @@ void Z3BitVector::representation_constants(string& condition){
 
 				int value_i = strtoi(value);
 
-
 				//printf("\e[32m before \e[0m .%s.\n", before.c_str());
 				//printf("\e[32m substr \e[0m .%s.\n", substr.c_str());
 				//printf("\e[32m after  \e[0m .%s.\n", after.c_str());
 
-
-
 				condition = before + internal_representation(value_i, type) + after;
-
-				//printf("condition %s\n", condition.c_str());
-
+				printf("condition %s\n", condition.c_str());
 			}
-
 		}
 	}
 /*
@@ -454,65 +435,60 @@ void Z3BitVector::get_operands(string condition, string operation, string& subst
 		//debug && printf("\e[32m param \e[0m .%s.\n", param.c_str());
 }
 
+
 void Z3BitVector::change_cast(string& condition){
 
-	while(true){
+  while(true){
 
 	if( condition.find("cast") == string::npos ){
-		return;
+	  return;
 	} else {
 
-		printf("condition %s\n", condition.c_str() );
+	  printf("condition %s\n", condition.c_str() );
 
-		assert(condition.find("__") == string::npos && "Undefined casting");
+	  assert(condition.find("__") == string::npos && "Undefined casting");
 
-		string castop = tokenize(condition.substr(condition.find("cast_")), " ")[0];
+	  string castop = tokenize(condition.substr(condition.find("cast_")), " ")[0];
 
-		string substr, before, after, param;
-		get_operands(condition, castop, substr, before, after, param);
+	  string substr, before, after, param;
+	  get_operands(condition, castop, substr, before, after, param);
 		
-		string ext_type = tokenize(castop, "_")[1];
-		string type_src = tokenize(castop, "_")[2];
-		string type_dst = tokenize(castop, "_")[3];
+	  string ext_type = tokenize(castop, "_")[1];
+	  string type_src = tokenize(castop, "_")[2];
+	  string type_dst = tokenize(castop, "_")[3];
 
-		int bits_src = bits(type_src);
-		int bits_dst = bits(type_dst);
-		int diff = bits_dst - bits_src;
+	  int bits_src = bits(type_src);
+	  int bits_dst = bits(type_dst);
+	  int diff = bits_dst - bits_src;
 
-		if( diff > 0 ){
-			//string content_dst = "(concat " + concat_begin(bits_dst - bits_src, 0) + " " + param + ")";
-			string content_dst;
-			if(ext_type == "s")
-				content_dst = "(concat " + sign_ext(bits_src, bits_dst, param) + " " + param + ")";
-			else
-				content_dst = "(concat " + zero_ext(bits_src, bits_dst, param) + " " + param + ")";
+	  if( diff > 0 ){
+		//string content_dst = "(concat " + concat_begin(bits_dst - bits_src, 0) + " " + param + ")";
+		string content_dst;
+		if(ext_type == "s")
+		  content_dst = "(concat " + sign_ext(bits_src, bits_dst, param) + " " + param + ")";
+		else
+		  content_dst = "(concat " + zero_ext(bits_src, bits_dst, param) + " " + param + ")";
 
-			condition = before + content_dst + after;
-			printf("condition_1 %s\n", condition.c_str());
+		condition = before + content_dst + after;
+		printf("condition_1 %s\n", condition.c_str());
 
-			//exit(0);
-		}
+		//exit(0);
+	  }
 
-		if( diff < 0 ){
-			string content_dst = "((_ extract " + itos(bits(type_dst)-1) + " 0) " + param + ")";
-			condition = before + content_dst + after;
-			printf("condition_2 %s\n", condition.c_str());
-			//exit(0);
-		}
+	  if( diff < 0 ){
+		string content_dst = "((_ extract " + itos(bits(type_dst)-1) + " 0) " + param + ")";
+		condition = before + content_dst + after;
+		printf("condition_2 %s\n", condition.c_str());
+		//exit(0);
+	  }
 
-		if( diff == 0 ){
-			condition = before + param + after;
-			//printf("condition_2 %s\n", condition.c_str());
-		}
-
-
-
-
+	  if( diff == 0 ){
+		condition = before + param + after;
+		//printf("condition_2 %s\n", condition.c_str());
+	  }
 	}
-
-	}
+  }
 }
-
 
 
 void Z3BitVector::get_name(string& filename){
@@ -521,74 +497,68 @@ void Z3BitVector::get_name(string& filename){
 }
 
 
-
-
 void Z3BitVector::replace_and(string& condition){
-	vector<int> widths;
-	widths.push_back(8);
-	widths.push_back(16);
-	widths.push_back(32);
-	widths.push_back(64);
+  vector<int> widths;
+  widths.push_back(8);
+  widths.push_back(16);
+  widths.push_back(32);
+  widths.push_back(64);
 
-	for ( unsigned int i = 0; i < widths.size(); i++) {
+  for ( unsigned int i = 0; i < widths.size(); i++) {
 		
 	int width = widths[i];
 	string operand = "Y" + itos(width);
 	while(true){
 
-	if( condition.find(operand) == string::npos ){
+	  if( condition.find(operand) == string::npos ){
 		break;
-	} else {
+	  } else {
 
 		string uniq_id;
 		string::iterator it = condition.begin() + condition.find(operand) + operand.length() + 1;
 		while(*it != ' '){
-			uniq_id += *it;
-			it++;
+		  uniq_id += *it;
+		  it++;
 		}
 
 		string operand_with_id = operand + "_" + uniq_id;
 
 		myReplace(condition, "(" + operand_with_id , "(bvand");
-
-
+	  }
 	}
-	}
-	}
+  }
 }
 
 void Z3BitVector::replace_or(string& condition){
-	vector<int> widths;
-	widths.push_back(8);
-	widths.push_back(16);
-	widths.push_back(32);
-	widths.push_back(64);
+  vector<int> widths;
+  widths.push_back(8);
+  widths.push_back(16);
+  widths.push_back(32);
+  widths.push_back(64);
 
-	for ( unsigned int i = 0; i < widths.size(); i++) {
+  for ( unsigned int i = 0; i < widths.size(); i++) {
 		
 	int width = widths[i];
 	string operand = "O" + itos(width);
 	while(true){
 
-	if( condition.find(operand) == string::npos ){
+	  if( condition.find(operand) == string::npos ){
 		break;
-	} else {
+	  } else {
 
 		string uniq_id;
 		string::iterator it = condition.begin() + condition.find(operand) + operand.length() + 1;
 		while(*it != ' '){
-			uniq_id += *it;
-			it++;
+		  uniq_id += *it;
+		  it++;
 		}
 
 		string operand_with_id = operand + "_" + uniq_id;
 
 		myReplace(condition, "(" + operand_with_id , "(bvor");
-
-
+	  }
 	}
-	}
-	}
+  }
 }
 
 string Z3BitVector::internal_condition(string condition){
@@ -636,7 +606,6 @@ bool Z3BitVector::islinear(string varname){
 }
 
 string Z3BitVector::eval(string expression){
-
 
 	return "";
 	myReplace(expression, "return_of___VERIFIER_nondet_char_1", "#x00");

@@ -783,19 +783,16 @@ void Operators::alloca_instr(char* _reg, char* _subtype){
 	vector<string> subtype = tokenize(string(_subtype), ",");
 
 	//printf("\e[33m alloca_instr \e[0m %s %s\n", _reg, _subtype ); fflush(stdout);
-	
 	//solver->initialize_var(name(reg));
 
 	if(!check_mangled_name(name(reg))) assert(0 && "Wrong name for alloca_instr");
 
-
 	stringstream rvalue; rvalue << "constant_PointerTyID_" << alloca_pointer;
-	solver->settype( name(reg), "Pointer");
+	solver->settype(name(reg), "Pointer");
 	solver->assign_instruction(name(rvalue.str()), name(reg) );
 
 	stringstream mem_var_aux; mem_var_aux << "mem" UNDERSCORE << itos(alloca_pointer);
 	int initial_alloca_pointer = alloca_pointer;
-
 
 	for ( unsigned int i = 0; i < subtype.size(); i++) {
 
@@ -849,14 +846,17 @@ void Operators::alloca_instr(char* _reg, char* _subtype){
 	debug && printf("\e[31m alloca_instr %s %s \e[0m. %s %s %s %s allocapointer %d last_address %d first_address %d\n", name(reg).c_str(), subtypes.c_str(), name(reg).c_str(), realvalue(reg).c_str(), mem_var_aux.str().c_str(), realvalue(mem_var_aux.str()).c_str(), alloca_pointer, solver->get_last_address(name(mem_var_aux.str())), solver->get_first_address(name(mem_var_aux.str())) );
 }
 
+
 int Operators::get_alloca_pointer(){
 	return alloca_pointer;
 }
+
 
 void Operators::set_alloca_pointer(int _alloca_pointer){
 	printf("operators::set_alloca_pointer %d\n", _alloca_pointer);
 	alloca_pointer = _alloca_pointer;
 }
+
 
 bool Operators::all_constant(vector<string> names){
 
@@ -864,8 +864,7 @@ bool Operators::all_constant(vector<string> names){
 		if(!(solver->is_constant(name(*it)) || solver->get_is_propagated_constant(name(*it)))) return false;
 	}
 
-	return true;
-	
+	return true;	
 }
 
 bool Operators::all_created_in_main(vector<string> names){
@@ -879,10 +878,9 @@ bool Operators::all_created_in_main(vector<string> names){
 				return false;
 		}
 	}
-
-	return true;
-	
+	return true;	
 }
+
 
 void Operators::getelementptr(char* _dst, char* _pointer, char* _indexes, char* _offset_tree){
 

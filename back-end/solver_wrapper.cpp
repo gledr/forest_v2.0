@@ -58,12 +58,10 @@ void SolverWrapper::free_var(string var){
 
 	stringstream mem_name; mem_name << "mem_" << realvalue(var);
 	forced_free_vars.insert( mem_name.str() );
-
 }
 
 
 string SolverWrapper::find_mem_of_id(string id){
-
 
 	for( map<string,Variable>::iterator it = variables_generic.begin(); it != variables_generic.end(); it++ ){
 		if(it->second.name_hint == id){
@@ -72,16 +70,10 @@ string SolverWrapper::find_mem_of_id(string id){
 	}
 
 	return "";
-	
-	
-
 }
 
 void SolverWrapper::show_check_sat(){
-
-
 	printf("(check-sat)\n");
-
 }
 
 void SolverWrapper::show_header(){
@@ -99,7 +91,6 @@ void SolverWrapper::show_tail(){
 
 void SolverWrapper::show_assigns(){
 
-
 	printf("SolverWrapper::show_assigns\n");
 
 	for( map<string,Variable>::iterator it = variables_generic.begin(); it != variables_generic.end(); it++ ){
@@ -108,23 +99,18 @@ void SolverWrapper::show_assigns(){
 
 		//printf("\e[32m name \e[0m %s \e[32m value \e[0m %s \e[32m expression \e[0m %s\n", name.c_str(), value.c_str(), content_smt(name).c_str());
 		printf("\e[32m name \e[0m %s \e[32m expression \e[0m %s \e[32m value \e[0m %s\n", name.c_str(), content_smt(name).c_str(), value.c_str());
-
 	}
-	
-
 }
 
+
 int SolverWrapper::get_num_fvars(){
-
-
 	return free_variables.size();
-
 }
 
 
 void SolverWrapper::set_real_value(string varname, string value){
 
-	//printf("set_real_value %s %s\n", varname.c_str(), value.c_str()); fflush(stdout);
+	printf("set_real_value %s %s\n", varname.c_str(), value.c_str()); fflush(stdout);
 	if(!check_mangled_name(varname)) assert(0 && "Wrong name for set_real_value");
 
 	if(value.substr(0,2) == "#x") assert(0 && "internal real value");
@@ -148,11 +134,9 @@ void SolverWrapper::initialize_real_value(string varname, string varhint){
 	} else {
 		variables_generic[varname].real_value = "0";
 	}
-
 }
 
 void SolverWrapper::set_real_value_mangled(string varname, string value ){
-
 
 	if(!check_mangled_name(varname)) assert(0 && "Wrong name for set_real_value");
 
@@ -161,8 +145,6 @@ void SolverWrapper::set_real_value_mangled(string varname, string value ){
 
 void SolverWrapper::set_real_value_hint(string hint, string value ){
 
-
-
 	printf("set_real_value_hint %s %s\n", hint.c_str(), value.c_str());
 
 	
@@ -170,13 +152,9 @@ void SolverWrapper::set_real_value_hint(string hint, string value ){
 		if(it->second.name_hint == hint){
 			it->second.real_value = value;
 			return;
-
-		}
-			
+		}		
 	}
-
-	assert(0 && "Variable not found");
-	
+	assert(0 && "Variable not found");	
 }
 
 
@@ -185,13 +163,11 @@ float SolverWrapper::get_solve_time(){
 }
 
 
-
 void SolverWrapper::check_name_and_pos(string name, string position){
 	for( set<NameAndPosition>::iterator it = free_variables.begin(); it != free_variables.end(); it++ ){
 		if(it->position == position && it->name != name) assert(0 && "Duplicated entry in free_variables");
 		if(it->name == name && it->position != position) assert(0 && "Duplicated entry in free_variables");
-	}
-	
+	}	
 }
 
 void check_name_does_not_exist(set<NameAndPosition> free_variables, string name){
@@ -201,7 +177,6 @@ void check_name_does_not_exist(set<NameAndPosition> free_variables, string name)
 			assert(0 && "repeated name");
 		}
 	}
-	
 }
 
 
@@ -214,13 +189,11 @@ void SolverWrapper::insert_variable(string name, string position){
 
 	if(!check_mangled_name(name)) assert(0 && "Wrong name for insert_variable");
 
-
 	if( name.find("constant") != string::npos )
 		return;
 
 	if( is_number(name) )
 		return;
-
 
 	if( name.find("function") != string::npos )
 		return;
@@ -228,7 +201,6 @@ void SolverWrapper::insert_variable(string name, string position){
 	if( gettype(name) == "Function" )
 		return;
 
-		
 	debug && printf("\e[35m Insert_variable \e[0m name %s hint %s position %s size %lu\n", name.c_str(), variables_generic[name].name_hint.c_str(), position.c_str(), free_variables.size() );
 
 	if( PAUSE_ON_INSERT )
@@ -254,8 +226,6 @@ void SolverWrapper::insert_variable(string name, string position){
 	//for( set<NameAndPosition>::iterator it = free_variables.begin(); it != free_variables.end(); it++ ){
 	//	printf("free_variable %s %s\n", it->name.c_str(), it->position.c_str() );
 	//}
-	
-
 }
 
 
@@ -275,6 +245,7 @@ void SolverWrapper::push_condition(string name, string actual_function, vector<s
 	}
 }
 
+
 string SolverWrapper::negateop(string predicate){
 
 	if( predicate == "#"  )  return "=";
@@ -288,11 +259,9 @@ string SolverWrapper::negateop(string predicate){
 	if( predicate == "u<"  ) return "u>=";
 	if( predicate == "u<=" ) return "u>";
 	assert(0 && "Unknown Operation");
-
 }
 
 string SolverWrapper::name_without_suffix( string name ){
-
 
 	if(!check_mangled_name(name)) assert(0 && "Wrong name for name_without_suffix");
 
@@ -309,8 +278,6 @@ void SolverWrapper::set_comes_from_non_annotated(string name){
 	debug && printf("\e[32m set_comes_from_non_annotated \e[0m %s \n", name.c_str() );
 
 	variables_generic[name].comes_from_non_annotated = true;
-	
-	
 }
 
 bool SolverWrapper::get_comes_from_non_annotated(string name){
@@ -318,17 +285,14 @@ bool SolverWrapper::get_comes_from_non_annotated(string name){
 	if( !check_mangled_name(name) ) assert(0 && "Wrong name for get_comes_from_non_annotated");
 
 	return variables_generic[name].comes_from_non_annotated;
-	
-	
 }
 
-string SolverWrapper::realvalue_mangled(string varname){
 
+string SolverWrapper::realvalue_mangled(string varname){
 
 	//printf("\e[33m realvalue_mangled \e[0m %s\n", varname.c_str() );
 
 	if(!check_mangled_name(varname)) assert(0 && "Wrong name for realvalue_mangled");
-
 
 	if( varname.find("constant") != string::npos ){
 		return varname.substr(9);
@@ -338,6 +302,7 @@ string SolverWrapper::realvalue_mangled(string varname){
 		return variables_generic[varname].real_value;
 	}
 }
+
 
 bool SolverWrapper::is_defined(string varname){
 	if(!check_mangled_name(varname)) assert(0 && "Wrong name for is_defined");
@@ -350,13 +315,12 @@ bool SolverWrapper::is_defined(string varname){
 		assert(0 && "is_defined of constant");
 	} else if( variables_generic[varname].real_value == "" ){
 		return false;
-	}else{
+	} else{
 		return true;
 	}
 }
 
 string SolverWrapper::realvalue(string varname){
-
 
 	//printf("\e[33m realvalue \e[0m %s\n", varname.c_str() );
 
@@ -381,15 +345,14 @@ string SolverWrapper::realvalue(string varname){
 		//printf("else %s\n", variables_generic[varname].real_value.c_str());
 		return variables_generic[varname].real_value;
 	}
-
 }
+
 
 void SolverWrapper::set_is_propagated_constant(string varname){
 
 	if(!check_mangled_name(varname)) assert(0 && "Wrong src for set_is_propagated_constant");
 
 	variables_generic[varname].is_propagated_constant = true;
-
 }
 
 void SolverWrapper::unset_is_propagated_constant(string varname){
@@ -397,8 +360,8 @@ void SolverWrapper::unset_is_propagated_constant(string varname){
 	if(!check_mangled_name(varname)) assert(0 && "Wrong src for unset_is_propagated_constant");
 
 	variables_generic[varname].is_propagated_constant = false;
-
 }
+
 
 bool SolverWrapper::is_constant(string varname){
 
@@ -408,16 +371,14 @@ bool SolverWrapper::is_constant(string varname){
 
 }
 
-bool SolverWrapper::is_forced_free(string position, bool colateral_effect){
 
+bool SolverWrapper::is_forced_free(string position, bool colateral_effect){
 
 	bool ret;
 
 	if(!check_mangled_name(position)) assert(0 && "Wrong src for is_forced_free");
 
 	if(colateral_effect){
-
-
 		if( forced_free_vars.find(position) != forced_free_vars.end() ){
 			if( already_forced_free.find(position) != already_forced_free.end() ){
 				ret = false;
@@ -430,60 +391,54 @@ bool SolverWrapper::is_forced_free(string position, bool colateral_effect){
 		}
 
 	} else {
-
 		if( forced_free_vars.find(position) != forced_free_vars.end() ){
 			ret = true;
 		} else {
 			ret = false;
 		}
-
 	}
-
-
 	//printf("SolverWrapper::is_forced_free %s %d : %d. size %lu\n", position.c_str(), colateral_effect, ret, forced_free_vars.size());
-
-
 	return ret;
 }
 
 void SolverWrapper::load_forced_free_vars(){
-
 
 	ifstream input("free_vars");
 	string line;
 	
 	while( getline( input, line ) ) {
 		forced_free_vars.insert(line);
-	}
-	
+	}	
 }
 
 void SolverWrapper::load_forced_free_hints(){
-
 
 	ifstream input("free_hints");
 	string line;
 	
 	while( getline( input, line ) ) {
 		forced_free_hints.insert(line);
-	}
-	
+	}	
 }
+
 
 bool SolverWrapper::is_forced_free_hint(string hint){
 	//printf("is_forced_free_hint %s\n", hint.c_str());
 	return  forced_free_hints.find(hint) != forced_free_hints.end();
 }
 
+
 void SolverWrapper::insert_forced_free_var(string name){
 	printf("insert_forced_free_var %s\n", name.c_str());
 	forced_free_vars.insert(name);
 }
 
+
 void SolverWrapper::set_first_content_value(string var, string value){
 	printf("\e[36m set_first_content_value %s %s\e[0m\n", var.c_str(), value.c_str() );
 	first_content_value[var] = value;
 }
+
 
 string SolverWrapper::get_first_content_value(string var){
 	return first_content_value[var];
@@ -518,6 +473,7 @@ bool SolverWrapper::implemented_operation(string operation){
 	return false;
 }
 
+
 bool SolverWrapper::is_free_var(string name){
 	if(!check_mangled_name(name)) assert(0 && "Wrong name for is_free_var");
 
@@ -530,9 +486,9 @@ bool SolverWrapper::is_free_var(string name){
 	}
 
 	//printf("0\n");
-	return false;
-	
+	return false;	
 }
+
 
 bool SolverWrapper::get_is_propagated_constant(string varname){
 
@@ -540,6 +496,7 @@ bool SolverWrapper::get_is_propagated_constant(string varname){
 	if(is_forced_free(varname, false)) return false;
 	return variables_generic[varname].is_propagated_constant;
 }
+
 
 string SolverWrapper::gettype(string name){
 
@@ -556,6 +513,7 @@ string SolverWrapper::gettype(string name){
 	return variables_generic[name].type;
 }
 
+
 void SolverWrapper::set_name_hint(string name, string hint){
 
 	debug && printf("\e[35m set_name_hint \e[0m name %s hint %s \n", name.c_str(), hint.c_str() );
@@ -565,12 +523,14 @@ void SolverWrapper::set_name_hint(string name, string hint){
 	variables_generic[name].name_hint = hint;
 }
 
+
 string SolverWrapper::get_name_hint(string name){
 
 	//debug && printf("\e[33m get_name_hint %s %s\e[0m\n", name.c_str(), variables_generic[name].name_hint.c_str() );
 
 	return variables_generic[name].name_hint;
 }
+
 
 string SolverWrapper::find_by_name_hint(string hint){
 
@@ -595,8 +555,8 @@ string SolverWrapper::find_by_name_hint(string hint){
 	assert(0 && "name not found");
 
 	return "";
-	
 }
+
 
 void SolverWrapper::settype(string name, string type){
 
@@ -604,8 +564,8 @@ void SolverWrapper::settype(string name, string type){
 
 	if( !check_mangled_name(name) ) assert(0 && "Wrong name for settype");
 	variables_generic[name].type = type;
-
 }
+
 
 string SolverWrapper::get_type(string name){
 
@@ -668,13 +628,14 @@ string SolverWrapper::get_type(string name){
 	if(isdriver) assert(0 && "Unknown Type");
 
 	return "Int";
-
 }
+
 
 vector<bool> SolverWrapper::get_path_stack(){
 
 	return path_stack;
 }
+
 
 string SolverWrapper::get_path_stack_str(){
 
@@ -689,14 +650,14 @@ string SolverWrapper::get_path_stack_str(){
 	return ret;
 }
 
+
 void SolverWrapper::push_path_stack(bool step){
 
 	path_stack.push_back(step);
 }
 
+
 void SolverWrapper::print_path_stack(){
-
-
 
 	printf("\e[33m Path_stack \e[0m");
 	for( vector<bool>::iterator it = path_stack.begin(); it != path_stack.end(); it++ ){
@@ -705,14 +666,14 @@ void SolverWrapper::print_path_stack(){
 	printf("\n");
 
 	printf("\e[33m Depth \e[0m %lu\n", path_stack.size());
-	
-
 }
+
 
 map<string, Variable> SolverWrapper::get_map_variables(){
 
 	return variables_generic;
 }
+
 
 string SolverWrapper::get_comma_stack_conditions_static(){
 
@@ -723,9 +684,7 @@ string SolverWrapper::get_comma_stack_conditions_static(){
 		ret << condition << ",";
 	}
 
-
 	return ret.str();
-
 }
 
 
@@ -733,12 +692,12 @@ set<NameAndPosition> SolverWrapper::get_free_variables(){
 	return free_variables;
 }
 
+
 string SolverWrapper::get_position(string name){
 
-
 	return variables_generic[name].name_hint;
-
 }
+
 
 vector<int> SolverWrapper::jump_offsets(string offset_tree){
 
@@ -751,7 +710,6 @@ vector<int> SolverWrapper::jump_offsets(string offset_tree){
 		//printf("sub %s %s\n", sub.c_str(), center.c_str() );
 		ret.push_back(strtoi(center));
 	}
-
 	return ret;
 }
 
@@ -765,12 +723,10 @@ set<set<pair<string, int> > > SolverWrapper::get_exclusions( map<set<pair<string
 	}
 
 	return ret;
-	
-
 }
 
-void SolverWrapper::propagate_binary(string op1, string op2, string dst){
 
+void SolverWrapper::propagate_binary(string op1, string op2, string dst){
 
 	unset_is_propagated_constant(dst);
 
@@ -808,16 +764,16 @@ void SolverWrapper::propagate_binary(string op1, string op2, string dst){
 	if(is_free_var(op1)) variables_generic[dst].free_variables.insert(get_name_hint(op1));
 	if(is_free_var(op2)) variables_generic[dst].free_variables.insert(get_name_hint(op2));
 
-
 	propagate_binary_extra(op1, op2, dst);
 }
+
 
 void SolverWrapper::set_malloc_origin(string name, string malloc_origin){
 	variables_generic[name].malloc_origin = malloc_origin;
 }
 
-void SolverWrapper::propagate_unary(string src, string dst, bool forcedfree){
 
+void SolverWrapper::propagate_unary(string src, string dst, bool forcedfree){
 
 	if( (get_is_propagated_constant(src) || is_constant(src)) && !forcedfree )
 		set_is_propagated_constant(dst);
@@ -841,11 +797,9 @@ void SolverWrapper::propagate_unary(string src, string dst, bool forcedfree){
 	variables_generic[dst].free_variables = variables_generic[src].free_variables;
 	if(is_free_var(src)) variables_generic[dst].free_variables.insert(get_name_hint(src));
 
-
 	propagate_unary_extra(src, dst, forcedfree );
-
-
 }
+
 
 bool has_maxval(string type){
 
@@ -853,8 +807,8 @@ bool has_maxval(string type){
 	if(type == "DoubleTyID") return false;
 
 	return true;
-
 }
+
 
 bool has_minval(string type){
 
@@ -862,6 +816,7 @@ bool has_minval(string type){
 
 	return true;
 }
+
 
 void SolverWrapper::cast_instruction(string src, string dst, string type_src, string type_dst, string sext){
 
@@ -876,8 +831,8 @@ void SolverWrapper::cast_instruction(string src, string dst, string type_src, st
 	} else {
 		set_real_value(dst, realvalue(src));
 	}
-
 }
+
 
 void SolverWrapper::binary_instruction(string dst, string op1, string op2, string operation){
 
@@ -890,13 +845,10 @@ void SolverWrapper::binary_instruction(string dst, string op1, string op2, strin
 			dst.c_str(),op1.c_str(), operation.c_str(),op2.c_str(),
 		        get_type(op1).c_str(), get_type(op2).c_str() );
 
-
-
 	if( variables_generic[op1].type != "" )
 		settype(dst, get_type(op1));
 	else
 		settype(dst, get_type(op2));
-
 
 	binary_instruction_content(dst, op1, op2, operation);
 
@@ -1023,7 +975,6 @@ void SolverWrapper::binary_instruction(string dst, string op1, string op2, strin
 		else
 			assert(0 && "Unknown type");
 
-
 		set_real_value(dst, result.str());
 	} else if(operation == "*"){ // mul_operation
 
@@ -1035,13 +986,10 @@ void SolverWrapper::binary_instruction(string dst, string op1, string op2, strin
 		else
 			assert(0 && "Unknown type");
 
-
 		set_real_value(dst, result.str());
 	} else if(operation == "/"){ // div_operation
 		stringstream result;
 		if( get_type(dst) == "Real" ){
-
-
 
 			if(::stof(realvalue(op2)) == 0.0){
 				database->insert_divzero();
@@ -1063,9 +1011,6 @@ void SolverWrapper::binary_instruction(string dst, string op1, string op2, strin
 			}
 
 			result << strtoi(realvalue(op1)) / strtoi(realvalue(op2));
-
-
-
 
 			result << ::stof(realvalue(op1)) / ::stof(realvalue(op2));
 		} else if (get_type(dst) == "Int") {
@@ -1099,21 +1044,10 @@ void SolverWrapper::binary_instruction(string dst, string op1, string op2, strin
 		assert(0 && "Unknown Operator");
 	}
 
-
-
-
-
-
-
-
-
-
-
 	propagate_binary(op1, op2, dst);
 
 	if( variables_generic[op1].type != "" ) variables_generic[dst].type = variables_generic[op1].type;
 	if( variables_generic[op2].type != "" ) variables_generic[dst].type = variables_generic[op2].type;
-
 
 	if(
 		operation == "#" ||
@@ -1126,7 +1060,6 @@ void SolverWrapper::binary_instruction(string dst, string op1, string op2, strin
 	  ){
 		settype(dst, "bool");
 	}
-
 
 	::make_signed(dst, gettype(dst));
 
@@ -1152,12 +1085,13 @@ void SolverWrapper::binary_instruction(string dst, string op1, string op2, strin
 
 }
 
+
 void SolverWrapper::ite_instruction(string dst, string cond, string op1, string op2){
 
-	if(!check_mangled_name(dst)) assert(0 && "Wrong dst for binary_instruction");
+	if(!check_mangled_name(dst))  assert(0 && "Wrong dst for binary_instruction");
 	if(!check_mangled_name(cond)) assert(0 && "Wrong cond for binary_instruction");
-	if(!check_mangled_name(op1)) assert(0 && "Wrong op1 for binary_instruction");
-	if(!check_mangled_name(op2)) assert(0 && "Wrong op2 for binary_instruction");
+	if(!check_mangled_name(op1))  assert(0 && "Wrong op1 for binary_instruction");
+	if(!check_mangled_name(op2))  assert(0 && "Wrong op2 for binary_instruction");
 
 	debug && printf("\n\e[32m ite_instruction %s = %s? %s : %s\e[0m\n",
 			dst.c_str(),cond.c_str(),op1.c_str(),op2.c_str() );
@@ -1182,87 +1116,77 @@ void SolverWrapper::ite_instruction(string dst, string cond, string op1, string 
 		get_last_address(op1), get_last_address(dst), get_first_address(op1), get_first_address(dst) );
 
 	//printf("real_and_expr %s %s\n", realvalue(dst).c_str(), eval(content_smt(dst)).c_str() );
-
 }
+
+
 void SolverWrapper::assign_instruction(string src, string dst, string fn_name ){
 
-	debug && printf("\n\e[32m Assign_instruction %s = %s \e[0m\n",dst.c_str(),src.c_str() );
+  debug && printf("\n\e[32m Assign_instruction %s = %s \e[0m\n",dst.c_str(),src.c_str() );
 
-	if(!check_mangled_name(src)) assert(0 && "Wrong src for assign");
-	if(!check_mangled_name(dst)) assert(0 && "Wrong dst for assign");
+  if(!check_mangled_name(src)) assert(0 && "Wrong src for assign");
+  if(!check_mangled_name(dst)) assert(0 && "Wrong dst for assign");
 
-		bool forcedfree = is_forced_free(src);
-		if(forcedfree){
+  bool forcedfree = is_forced_free(src);
+  if(forcedfree){
+	clear_variable(src);
+  }
 
-			clear_variable(src);
-		}
+  assign_instruction_content(src, dst, fn_name);
 
-	assign_instruction_content(src, dst, fn_name);
+  if(forcedfree){
+	save_first_content(src, dst);
 
-		if(forcedfree){
-			save_first_content(src, dst);
+  }
 
-		}
+  //bool forcedfree = is_forced_free(src);
 
+  propagate_unary(src, dst, forcedfree);
 
-	//bool forcedfree = is_forced_free(src);
+  if(!assigning_globals && get_name_hint(dst).substr(0,7) == "global_"){
+	is_forced_free(dst, true);
+  }
 
-	propagate_unary(src, dst, forcedfree);
+  if(get_name_hint(src).substr(0,7) == "global_" && options->cmd_option_bool("globals_always_free")){
+	set_content(dst, get_name_hint(src));
+	set_content(src, get_name_hint(src));
+	insert_variable(src, get_name_hint(src));
+	unset_is_propagated_constant(dst);
+  }
 
-	if(!assigning_globals && get_name_hint(dst).substr(0,7) == "global_"){
-		is_forced_free(dst, true);
-	}
+  //if( variables[dst].type == "" ) assert(0 && "No type in dst");
+  string prev_type = variables_generic[dst].type;
+  string new_type = get_type(src);
 
-	if(get_name_hint(src).substr(0,7) == "global_" && options->cmd_option_bool("globals_always_free")){
-		set_content(dst, get_name_hint(src));
-		set_content(src, get_name_hint(src));
-		insert_variable(src, get_name_hint(src));
-		unset_is_propagated_constant(dst);
-	}
+  settype(dst, gettype(src));
 
-	//if( variables[dst].type == "" ) assert(0 && "No type in dst");
-	string prev_type = variables_generic[dst].type;
-	string new_type = get_type(src);
+  if(is_constant(src) && prev_type != new_type && prev_type != "Pointer" && prev_type != ""){
+	printf("Types %s %s\n", prev_type.c_str(), new_type.c_str());
+	settype(dst, prev_type);
+  }
 
-	settype(dst, gettype(src));
+  if(variables_generic[dst].type == "")
+	settype(dst, prev_type);
 
-	if(is_constant(src) && prev_type != new_type && prev_type != "Pointer" && prev_type != ""){
-		printf("Types %s %s\n", prev_type.c_str(), new_type.c_str());
-		settype(dst, prev_type);
-	}
-
-	if(variables_generic[dst].type == "")
-		settype(dst, prev_type);
-
-	//printf("set_real_value inside assign %s %s %s\n", dst.c_str(), src.c_str(), realvalue(src).c_str() );
-	set_real_value( dst, realvalue(src) );
+  //printf("set_real_value inside assign %s %s %s\n", dst.c_str(), src.c_str(), realvalue(src).c_str() );
+  set_real_value( dst, realvalue(src) );
 
 
-	//debug && printf("\e[32m Content_dst \e[0m %s \e[32m type \e[0m %s\n", variables[dst].content.c_str(), variables[dst].type.c_str() );
-	debug && printf("\e[32m Content_dst \e[0m %s \e[32m type \e[0m %s %s %s\e[32m realvalue \e[0m %s \e[32m propconstant \e[0m %d %d \e[32m lastaddress\e[0m  %d %d \e[32m \e[32m firstaddress \e[0m \e[0m %d %d\n",
-                 debug_content(dst).c_str(),
-		 variables_generic[src].type.c_str(), variables_generic[dst].type.c_str(), prev_type.c_str(),
-		 realvalue(dst).c_str(), get_is_propagated_constant(src), get_is_propagated_constant(dst),
-		 get_last_address(src), get_last_address(dst), get_first_address(src), get_first_address(dst) );
+  //debug && printf("\e[32m Content_dst \e[0m %s \e[32m type \e[0m %s\n", variables[dst].content.c_str(), variables[dst].type.c_str() );
+  debug && printf("\e[32m Content_dst \e[0m %s \e[32m type \e[0m %s %s %s\e[32m realvalue \e[0m %s \e[32m propconstant \e[0m %d %d \e[32m lastaddress\e[0m  %d %d \e[32m \e[32m firstaddress \e[0m \e[0m %d %d\n",
+				  debug_content(dst).c_str(),
+				  variables_generic[src].type.c_str(), variables_generic[dst].type.c_str(), prev_type.c_str(),
+				  realvalue(dst).c_str(), get_is_propagated_constant(src), get_is_propagated_constant(dst),
+				  get_last_address(src), get_last_address(dst), get_first_address(src), get_first_address(dst) );
 
 
-
-
-
-
-	//printf("real_and_expr %s %s\n", realvalue(dst).c_str(), eval(content_smt(dst)).c_str() );
-
-
-
-
-
+  //printf("real_and_expr %s %s\n", realvalue(dst).c_str(), eval(content_smt(dst)).c_str() );
 }
 
 
 int SolverWrapper::minval(string type){
 
 	if (type == "IntegerTyID32" ) return -(1<<30 ) ;
-	if (type == "IntegerTyID1" ) return 0;
+	if (type == "IntegerTyID1"  ) return 0;
 	if (type == "IntegerTyID64" ) return -(1<<30 ) ;
 	if (type == "IntegerTyID8"  ) return -128;
 	if (type == "IntegerTyID16" ) return -(1<<15 ) ;
@@ -1271,16 +1195,16 @@ int SolverWrapper::minval(string type){
 	if (type == "Pointer"       ) return 0;
 	if (type == "bool"          ) return 0;
 
-
 	printf("MinVal unknown type %s\n", type.c_str()); fflush(stdout);
 	if(isdriver) assert(0 && "Unknown type");
 	return 0;
 }
 
+
 int SolverWrapper::maxval(string type){
 
 	if (type == "IntegerTyID32" ) return (1<<30 ) ;
-	if (type == "IntegerTyID1" ) return 1;
+	if (type == "IntegerTyID1"  ) return 1;
 	if (type == "IntegerTyID64" ) return (1<<30 ) ;
 	if (type == "IntegerTyID8"  ) return 127;
 	if (type == "IntegerTyID16" ) return (1<<15 ) ;
@@ -1425,7 +1349,6 @@ void SolverWrapper::load_file_initializations(){
 
 	printf("SolverWrapper::load_file_initializations\n");
 
-
 	if(options->cmd_option_bool("use_db_for_fi")){
 		initializations = database->load_fi(options->cmd_option_str("file_initializations"));
 	} else {
@@ -1440,8 +1363,6 @@ void SolverWrapper::load_file_initializations(){
 			printf("file_initializations %s %s\n", position.c_str(), value.c_str());
 		}
 	}
-	
-
 }
 
 void SolverWrapper::set_assigning_globals(bool value){

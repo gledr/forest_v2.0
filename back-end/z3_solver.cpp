@@ -544,28 +544,18 @@ void Z3Solver::right_shift(string op1, string op2, string dst, stringstream& con
 void Z3Solver::left_shift(string op1, string op2, string dst, stringstream& content_ss){
 
 	content_ss << "(<< " << content(op1) << " " << content(op2) << ")";
-
-
-
-
 }
 
 void Z3Solver::and_operation(string op1, string op2, string dst, stringstream& content_ss){
 
-
 	int uniq_num = rand();
 		content_ss << "(Y" << bits(gettype(op1)) << "_" << uniq_num << " " << content(op1) << " " << content(op2) << ")";
-
-
 }
 
 void Z3Solver::or_operation(string op1, string op2, string dst, stringstream& content_ss){
 
-
 	int uniq_num = rand();
 		content_ss << "(O" << bits(gettype(op1)) << "_" << uniq_num << " " << content(op1) << " " << content(op2) << ")";
-
-
 }
 
 
@@ -588,6 +578,7 @@ bool Z3Solver::need_for_dump(string name, string content){
 		return true;
 }
 
+
 void Z3Solver::neq_operation(string op1, string op2, string dst, stringstream& content_ss){
 
 	if(!islinear(op1) || !islinear(op2)){set_real_value(dst, "false"); return;}
@@ -601,17 +592,13 @@ void Z3Solver::neq_operation(string op1, string op2, string dst, stringstream& c
 
 		//fflush(stdout); fflush(stderr);
 		//printf("realvalue_op1 %s realvalue_op2 %s\n", realvalue(op1).c_str(), realvalue(op2).c_str() );
-
 }
+
 
 void Z3Solver::rem_operator(string op1, string op2, string dst, stringstream& content_ss){
 
 		content_ss << "(% " << content(op1 ) << " " <<  content(op2 ) << ")";
-
-
 }
-
-
 
 
 void Z3Solver::leq_operation(string op1, string op2, string dst, stringstream& content_ss){
@@ -630,27 +617,24 @@ void Z3Solver::ugt_operation(string op1, string op2, string dst, stringstream& c
 void Z3Solver::ugeq_operation(string op1, string op2, string dst, stringstream& content_ss){
 	if(!islinear(op1) || !islinear(op2)){set_real_value(dst, "false"); return;}
 	content_ss << "(u>= " << content(op1 ) << " " <<  content(op2 ) << ")";
-
 }
+
 
 void Z3Solver::ult_operation(string op1, string op2, string dst, stringstream& content_ss){
 	if(!islinear(op1) || !islinear(op2)){set_real_value(dst, "false"); return;}
 	content_ss << "(u< " << content(op1 ) << " " <<  content(op2 ) << ")";
-
 }
-
 
 
 void Z3Solver::uleq_operation(string op1, string op2, string dst, stringstream& content_ss){
 
 	if(!islinear(op1) || !islinear(op2)){set_real_value(dst, "false"); return;}
 	content_ss << "(u<= " << content(op1 ) << " " <<  content(op2 ) << ")";
-
 }
+
 
 void Z3Solver::geq_operation(string op1, string op2, string dst, stringstream& content_ss){
 	if(!islinear(op1) || !islinear(op2)){set_real_value(dst, "false"); return;}
-
 
 		content_ss << "(>= " << content(op1 ) << " " <<  content(op2 ) << ")";
 }
@@ -665,13 +649,11 @@ void Z3Solver::lt_operation(string op1, string op2, string dst, stringstream& co
 void Z3Solver::bt_operation(string op1, string op2, string dst, stringstream& content_ss){
 	if(!islinear(op1) || !islinear(op2)){set_real_value(dst, "false"); return;}
 
-
 		content_ss << "(> " << content(op1 ) << " " <<  content(op2 ) << ")";
 }
 
 void Z3Solver::eq_operation(string op1, string op2, string dst, stringstream& content_ss){
 	if(!islinear(op1) || !islinear(op2)){set_real_value(dst, "false"); return;}
-
 
 		content_ss << "(= " << content(op1 ) << " " <<  content(op2 ) << ")";
 }
@@ -686,24 +668,16 @@ void Z3Solver::add_operation(string op1, string op2, string dst, stringstream& c
 
 void Z3Solver::xor_operation(string op1, string op2, string dst, stringstream& content_ss){
 
-
 		content_ss << "(X " << content(op1 ) << " " <<  content(op2 ) << ")";
-
 }
-
 
 
 void Z3Solver::sub_operation(string op1, string op2, string dst, stringstream& content_ss){
 
-
 		content_ss << "(- " << content(op1 ) << " " <<  content(op2 ) << ")";
-
-
 }
 
-
 void Z3Solver::mul_operation(string op1, string op2, string dst, stringstream& content_ss){
-
 
 	if(is_constant(op1) || get_is_propagated_constant(op1) || is_constant(op2) || get_is_propagated_constant(op2))
 		content_ss << "(*c " << content(op1 ) << " " <<  content(op2 ) << ")";
@@ -718,8 +692,8 @@ void Z3Solver::mul_operation(string op1, string op2, string dst, stringstream& c
 		content_ss.str("");
 		content_ss << content;
 	}
-
 }
+
 
 void Z3Solver::div_operation(string op1, string op2, string dst, stringstream& content_ss){
 
@@ -728,8 +702,6 @@ void Z3Solver::div_operation(string op1, string op2, string dst, stringstream& c
 		} else {
 			content_ss << "(/ " << content(op1 ) << " " <<  content(op2 ) << ")";
 		}
-
-
 }
 
 
@@ -737,9 +709,9 @@ string Z3Solver::internal_representation(int a, string type){
 	return itos(a);
 }
 
+
 void Z3Solver::remv_op_constant(string& condition){
 	myReplace(condition, "(*c ", "(* ");
-
 }
 
 
@@ -771,18 +743,13 @@ string Z3Solver::content( string name ){
 }
 
 
-
-
 void Z3Solver::assign_instruction_content(string src, string dst, string fn_name){
-
+  
 		variables[dst].content = content(src);
-
-
 }
 
 
 void Z3Solver::binary_instruction_content(string dst, string op1, string op2, string operation){
-
 
 	stringstream content_ss;
 	proplinear = true;
@@ -831,12 +798,9 @@ void Z3Solver::binary_instruction_content(string dst, string op1, string op2, st
 		div_operation(op1, op2, dst, content_ss);
 	}
 
-
-
 	variables[dst].content = content_ss.str();
-
-
 }
+
 
 void Z3Solver::ite_instruction_content(string dst, string condition, string op1, string op2){
 
@@ -847,8 +811,8 @@ void Z3Solver::ite_instruction_content(string dst, string condition, string op1,
 	variables[dst].content = content_ss.str();
 }
 
-void Z3Solver::setcontent(string varname, string content){
 
+void Z3Solver::setcontent(string varname, string content){
 
 	debug && printf("\e[32m setcontent %s %s\e[0m.\n", varname.c_str(), content.c_str() );
 
@@ -859,7 +823,6 @@ void Z3Solver::setcontent(string varname, string content){
 
 void Z3Solver::propagate_unary_extra(string src, string dst, bool forcedfree){
 
-
 	set_offset_tree(dst, get_offset_tree(src));
 
 	variables[dst].idx_values = variables[src].idx_values;
@@ -869,7 +832,6 @@ void Z3Solver::propagate_unary_extra(string src, string dst, bool forcedfree){
 	if(!islinear(src)){
 		set_non_linear(dst);
 	}
-
 }
 
 
@@ -975,8 +937,6 @@ void Z3Solver::add_indexes(string dst, vector<string> indexes){
 	for( vector<string>::iterator it = indexes.begin(); it != indexes.end(); it++ ){
 		variables[dst].indexes.insert(*it);
 	}
-	
-
 }
 
 
@@ -1035,9 +995,6 @@ void Z3Solver::pointer_instruction(string dst, string offset_tree, vector<string
 		init_indexes(dst, indexes[i]);
 	}
 
-
-
-
 	setcontent(dst, expr);
 	set_real_value(dst, itos(real_pointer));
 
@@ -1083,10 +1040,6 @@ string Z3Solver::get_idx_type(string addr){
 	return get_type( "mem_" + itos(variables[addr].idx_values.begin()->second ));
 
 }
-
-
-
-
 
 void Z3Solver::sym_load(string dst, string addr){
 
@@ -1178,17 +1131,11 @@ void Z3Solver::sym_load(string dst, string addr){
 		m++;
 	}
 
-
-
-
-
 	load_idx_vals(dst, map_idx_val);
 
 	string type = get_idx_type(addr);
 	settype(dst, type );
 
-
-	
 	int actual_addr = strtoi(realvalue(addr));
 	string actual_value = realvalue("mem_" + itos(actual_addr));
 
@@ -1200,7 +1147,6 @@ void Z3Solver::sym_load(string dst, string addr){
 			actual_addr, actual_value.c_str() );
 
 	//exit(0);
-
 }
 
 
@@ -1270,8 +1216,6 @@ void Z3Solver::sym_store(string src, string addr){
 	//settype(dst, type );
 
 	//printf("\e[32m Variable_store \e[0m src %s content %s result_expr %s\n", src.c_str(), idx_content.c_str(),result_expr.str().c_str());
-
-
 }
 
 
@@ -1328,10 +1272,7 @@ void Z3Solver::store_idx_vals(string src, map<set<pair<string, int> > , int > ma
 				printf("\e[32m idx_values \e[0m %s %d %d\n", idx.c_str(), idxval, val);
 			}
 		}
-
 	}
-	
-
 }
 
 
@@ -1410,7 +1351,6 @@ void Z3Solver::bool_to_int8(string src, string dst){
 			string cntent = (content(src).substr(9) == "(")?close_str(content(src).substr(9)):tokenize(content(src), " ")[2];
 			setcontent(dst, "(ite (> " + cntent + " constant_IntegerTyID32_0) constant_IntegerTyID8_1 constant_IntegerTyID8_0)");
 		}
-
 	}
 }
 
@@ -1429,10 +1369,8 @@ void Z3Solver::bool_to_int32(string src, string dst){
 			string cntent = (content(src)[8] == '(')?close_str(content(src).substr(8)):tokenize(content(src), " ")[2];
 			setcontent(dst, "(ite (> " + cntent + " constant_IntegerTyID32_0) constant_IntegerTyID32_1 constant_IntegerTyID32_0)");
 		}
-
 	}
 }
-
 
 
 string Z3Solver::debug_content( string name ){
@@ -1444,8 +1382,6 @@ string Z3Solver::content_smt(string name){
 }
 
 void Z3Solver::push_condition_var(string name, bool invert ){
-
-
 
 	if(!variables[name].islinear){
 		Z3Variable var;
@@ -1463,13 +1399,14 @@ void Z3Solver::push_condition_var(string name, bool invert ){
 	if(type == "IntegerTyID32")
 		var.content = internal_condition("(not (= " + var.content + " constant_IntegerTyID32_0))");
 
+
+	// #FIXME
 	if(type == "IntegerTyID1")
-		var.content = internal_condition("(not (= " + var.content + " constant_IntegerTyID8_0))");
+		var.content = internal_condition("(not (= " + var.content + " constant_IntegerTyID1_0))");
 
 	//printf("push_condition_var %s %s\n", var.content.c_str(), variables_generic[name].type.c_str() );
 
 	conditions.push_back( var );
-
 }
 
 bool Z3Solver::is_cond_sign(string cond){
@@ -1529,17 +1466,13 @@ void Z3Solver::push_condition_static_var(string name, bool invert){
 		assert(is_cond_sign(cond_op) && "Not a condition");
 	}
 
-
-
-
 	//printf("condition_static %s %s %s : %s\n", function.c_str(), bb.c_str(), cond.c_str(), condition.c_str());
 
 	conditions_static.push_back( condition );
-
 }
 
-string Z3Solver::negation(string condition){
 
+string Z3Solver::negation(string condition){
 
 	stringstream negation_ss;
 	negation_ss << "(not " << string(condition) << ")";
@@ -1635,8 +1568,6 @@ int Z3Solver::show_problem(){
 	getchar();
 }
 
-
-
 void Z3Solver::add_eq_zero(string name){
 
 	
@@ -1647,9 +1578,7 @@ void Z3Solver::add_eq_zero(string name){
 
 	printf("\e[32m add_eq_zero \e[0m %s %s\n", name.c_str(), var.content.c_str());
 
-
 	conditions.push_back( var );
-
 }
 
 
@@ -1663,8 +1592,8 @@ void Z3Solver::add_neq_zero(string name){
 	printf("\e[32m add_eq_zero \e[0m %s %s\n", name.c_str(), var.content.c_str());
 
 	conditions.push_back( var );
-
 }
+
 
 void Z3Solver::add_bt(string name, string value){
 
@@ -1689,8 +1618,8 @@ void Z3Solver::add_lt(string name, string value){
 	printf("\e[32m add_lt \e[0m %s %s\n", name.c_str(), var.content.c_str());
 
 	conditions.push_back( var );
-
 }
+
 
 void Z3Solver::dump_conditions(stringstream& sstream){
 
@@ -1698,6 +1627,7 @@ void Z3Solver::dump_conditions(stringstream& sstream){
 	  sstream << it->content;
 	}
 }
+
 
 string Z3Solver::get_comma_stack_conditions(){
 
@@ -1708,11 +1638,9 @@ string Z3Solver::get_comma_stack_conditions(){
 		ret << condition << ",";
 	}
 
-
 	return ret.str();
-	
-
 }
+
 
 string Z3Solver::get_anded_stack_conditions(){
 
@@ -1727,10 +1655,7 @@ string Z3Solver::get_anded_stack_conditions(){
 
 	if(conditions.size() > 1) ret << ")";
 
-
 	return ret.str();
-	
-
 }
 
 
@@ -1761,12 +1686,11 @@ void Z3Solver::dump_model(){
 	  database->insert_model_entry(variable, content_var, path_cond);
 		
 	}
-  }
-	
+  }	
 }
 
-void Z3Solver::add_eq_set(set<pair <string, int> > set_idx_val){
 
+void Z3Solver::add_eq_set(set<pair <string, int> > set_idx_val){
 
 	for( set<pair <string, int> >::iterator it = set_idx_val.begin(); it != set_idx_val.end(); it++ ){
 
@@ -1777,23 +1701,16 @@ void Z3Solver::add_eq_set(set<pair <string, int> > set_idx_val){
 
 		//printf("\e[32m add_eq_zero \e[0m %s %s\n", name.c_str(), var.content.c_str());
 
-
 		conditions.push_back( var );
 	}
-
-
-
 }
-
-
-
 
 
 void Z3Solver::set_content(string name, string value){
 
 	variables[name].content = value;
-
 }
+
 
 pair<int, int> Z3Solver::get_range(string name){
 
@@ -1880,26 +1797,18 @@ pair<int, int> Z3Solver::get_range(string name){
 	printf("get_range_output %s %s %d %d\n", name.c_str(), gettype(name).c_str(), defmin, defmax );
 
 	return pair<int,int>(defmin,defmax);
-
 }
-
-
-
 
 
 bool Z3Solver::empty_assertions(){
 
 	return conditions.size() == 0;
-
 }
 
 
 void Z3Solver::add_smt(string smt){
-
-
 	Z3Variable var;
 	var.content = smt;
 
 	conditions.push_back(var);
-
 }

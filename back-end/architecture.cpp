@@ -26,7 +26,7 @@ using namespace std;
 
 string hex_representation(int in, string type){
 	char b[20];
-
+                
 	if(type == "IntegerTyID32")
 		sprintf(b, "%08x", in);
 	else if(type == "DoubleTyID")
@@ -114,7 +114,7 @@ string trunc(string src, string dst_type){
 
 	int ret_i;
 
-	     if(dst_type == "IntegerTyID8"   ) ret_i = (char) strtoi(src);
+	if(dst_type == "IntegerTyID8"   ) ret_i = (char) strtoi(src);
 	else if(dst_type == "IntegerTyID32"  ) ret_i = (int) strtoi(src);
 	else if(dst_type == "IntegerTyID16"  ) ret_i = (short) strtoi(src);
 	else if(dst_type == "DoubleTyID"     ) ret_i = (double) strtoi(src);
@@ -130,8 +130,17 @@ string trunc(string src, string dst_type){
 
 }
 
+
 string hex_representation_2(int in, string type){
 	char b[20];
+
+	if(type.compare("IntegerTyID1") == 0){
+	  if (in == 0){
+		return "false";
+	  } else {
+		return "true";
+	  }
+	}
 
 	if(type == "IntegerTyID32")
 		sprintf(b, "%08x", in);
