@@ -10,10 +10,16 @@
 	  result_out = c_side_a_in + 1;
 	  break;
 	case DEC: 
-	  result_out = c_side_a_in + 1;
+	  result_out = c_side_a_in - 1;
 	  break;
 	}
-  
-    int __result_check = (result_out == c_expected_out);
-    __VERIFIER_assert(__result_check);
+
+    if (result_out == 0){
+    zero_out = 1;
+    } else {
+    zero_out = 0;
+    }
+    
+    int __zero_check = (zero_out == c_expected_zero_out);
+    __VERIFIER_assert(__zero_check);
 }

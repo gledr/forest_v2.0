@@ -4,11 +4,11 @@
   <option key="test" value="true"/>
   <option key="explanation" value="Simple Example Select Variables"/>
   <option key="file" value="main.c"/>
-  <option key="debug_passes" value="-loop_latch_info -insert_select_variables"/>
   <option key="c_standard" value="C"/>
   <option key="globals_always_free" value="true"/>
   <option key="output" value="mem_8"/> 
-  <option key="errors_in_design" value="1"/>
+  <option key="errors_in_design" value="0"/>
   <option key="max_depth" value="10"/> 
-  <option key="generate_model" value="true"/> 
+  <option key="generate_model" value="true"/>
+  <option key="debug_passes" value="-loop_latch_info -insert_select_variables"/>
 </options>

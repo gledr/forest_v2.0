@@ -105,5 +105,4 @@ void export_allsat();
 void exec_allsat();
 void export_model();
 
-
 #endif /* end of include guard: _MODELS_H_ */

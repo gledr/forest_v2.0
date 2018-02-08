@@ -376,7 +376,7 @@ void Z3BitVector::representation_constants(string& condition){
 				//printf("\e[32m after  \e[0m .%s.\n", after.c_str());
 
 				condition = before + internal_representation(value_i, type) + after;
-				printf("condition %s\n", condition.c_str());
+				//printf("condition %s\n", condition.c_str());
 			}
 		}
 	}

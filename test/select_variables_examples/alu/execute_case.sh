@@ -23,6 +23,7 @@ do
     forest -export_model
 done
 
+#forest -check_learned_model
 forest -export_allsat
 forest -execute_allsat
 forest -run_evaluation

@@ -345,7 +345,7 @@ private:
    *           even when multiple use cases have been performed
    */
   void get_model_assertions (){
-	std::string const query = "SELECT smt FROM models ORDER BY smt;";
+	std::string const query = "SELECT smt FROM models;";
 	p_active_transition = assertions;
 	execute_database_call(query);
 	p_active_transition = init;
@@ -355,14 +355,16 @@ private:
 	infile >> p_num_of_problems;
 	infile.close();
 	boost::filesystem::remove("/tmp/smt/__num_of_problems__");
-	int current_problem = 0;
-	int chunks = p_assertions.size() / p_num_of_problems;
+
 	for(int i = 0; i < p_num_of_problems; ++i){
-	  int cnt = i;
-	  std::vector<std::string> tmp(p_assertions.begin()+(cnt*chunks), p_assertions.begin()+((cnt+1)*chunks));
-	  p_assertions_ordered.push_back(tmp);
-	}
+	  std::vector<std::string> path;
+	  for(int j = i; j < p_assertions.size(); j += p_num_of_problems){
+		path.push_back(p_assertions[j]);
+	  }
+	  p_assertions_ordered.push_back(path);
+	}	
   }
+
 
   /*
    * @brief Write the Header/Options to the smt2 stream
@@ -412,6 +414,8 @@ private:
    */
   void write_assertions(std::stringstream & stream, int path){
 	try {
+	  std::cout << std::endl;
+	  std::cout << "Writing File for Path: " << path << std::endl << std::endl;
 	  if(!p_assertions_ordered.empty()){
 		stream << "; Start Assertions" << std::endl;
 	
@@ -432,8 +436,10 @@ private:
 		  current_assertion_block++;
 		}
 
-		for(auto itor = p_free_variables.begin(); itor != p_free_variables.end(); ++itor){
-		  itor->used = 0;
+		for(auto itor = p_free_variables_replace.begin(); itor != p_free_variables_replace.end(); ++itor){
+		  for(auto inner_itor = itor->begin(); inner_itor != itor->end(); ++inner_itor){
+			inner_itor->used = 0;
+		  }
 		}
 
 		// #2 Introduce the soft assertions for the select variables
@@ -534,21 +540,24 @@ private:
 	  int cnt = 0;
 
 	  for(auto itor = p_free_variables_replace[group].begin(); itor != p_free_variables_replace[group].end(); ++itor){
-		if(current_input.find(itor->reg_name) != std::string::npos && itor->used < problems){
+		for(int i = 0; i < problems; ++i){
+		  if(current_input.find(itor->reg_name) != std::string::npos && itor->used < problems){
 #ifdef DEBUG
-		  std::cout << "Input: " << current_input << std::endl;
-		  std::cout << "Found Key: " << itor->reg_name << std::endl;
-		  std::cout << "Replace with: " << itor->resolved_name << std::endl;
+			std::cout << "Input: " << current_input << std::endl;
+			std::cout << "Found Key: " << itor->reg_name << std::endl;
+			std::cout << "Replace with: " << itor->resolved_name << std::endl;
 #endif
+		  
+			std::string input = current_input;
+			std::string key = itor->reg_name;
+			std::string replace_with = " " + itor->resolved_name + " ";
+			std::string regex_pattern = " " + key + " ";
+			std::regex reg(regex_pattern);
+			current_input = std::regex_replace(input, reg, replace_with);
+			itor->used++;
+		  }
 		  cnt++;
-		  std::string input = current_input;
-		  std::string key = itor->reg_name;
-		  std::string replace_with = " " + itor->resolved_name + " ";
-		  std::string regex_pattern = " " + key + " ";
-		  std::regex reg(regex_pattern);
-		  current_input = std::regex_replace(input, reg, replace_with);
-		  itor->used++;
-		  if(cnt == (p_select_variables.size() * problems)){
+		  if(cnt == p_select_variables.size()){
 			break;
 		  }
 		}
