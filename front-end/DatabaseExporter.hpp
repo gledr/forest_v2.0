@@ -11,7 +11,7 @@
 #include <regex>
 #include <map>
 
-#define DEBUG
+//#define DEBUG
 
 
 /**
@@ -74,9 +74,11 @@ public:
    */
   void collect_data(){
 	this->get_model_assertions();
+	this->get_learned_model_assertions();
+	this->preprocess_assertions();
 	this->get_free_variables();
 	this->split_free_variables();
-	this->show_replace_groups();
+	//this->show_replace_groups();
   }
 
   /**
@@ -99,6 +101,8 @@ public:
 		}
 	  } else if (p_active_transition == assertions){
 		p_assertions.push_back(argv[0]);
+	  } else if (p_active_transition == learned_assertions){
+		p_learned_assertions.push_back(argv[0]);
 	  }
 	} catch (...){
 	  std::cerr<< "Unknown error caught!" << std::endl;
@@ -223,7 +227,8 @@ private:
   enum active_transition {
 	free_variables,
 	init,
-	assertions
+	assertions,
+	learned_assertions
   };
 
   /**
@@ -248,6 +253,7 @@ private:
   std::vector<FreeVariables> p_select_variables;
   std::vector<std::vector<FreeVariables> > p_free_variables_replace;
   std::vector<std::string> p_assertions;
+  std::vector<std::string> p_learned_assertions;
   std::string p_root_dir;
   size_t p_num_of_problems;
   std::vector<std::vector<std::string> > p_assertions_ordered;
@@ -316,6 +322,7 @@ private:
 	  }
   }
 
+  
   /**
    * @brief Extract the select variables out of the free variables
    */
@@ -324,18 +331,22 @@ private:
 	std::cout << "Extract Select Variables..." << std::endl;
 #endif
 	std::string select = "select_enable";
+	std::vector<FreeVariables> next_free_variables;
 	std::vector<FreeVariables>::iterator itor;
 	for(itor = p_free_variables.begin(); itor != p_free_variables.end(); ++itor){
 	  if(itor->resolved_name.find(select) != std::string::npos){
 		FreeVariables tmp;
-		tmp.used = 0;
 		tmp.resolved_name = itor->resolved_name;
 		tmp.reg_name = itor->reg_name;
 		tmp.type = itor->type;
 		p_select_variables.push_back(tmp);
-		p_free_variables.erase(itor);
+	  } else {
+		next_free_variables.push_back(*itor);
 	  }
 	}
+	
+	p_free_variables.clear();
+	std::copy(next_free_variables.begin(),next_free_variables.end(), std::back_inserter(p_free_variables));	
   }
 
   /**
@@ -349,23 +360,9 @@ private:
 	p_active_transition = assertions;
 	execute_database_call(query);
 	p_active_transition = init;
-
-	std::fstream infile;
-	infile.open("/tmp/smt/__num_of_problems__", std::ios::in);
-	infile >> p_num_of_problems;
-	infile.close();
-	boost::filesystem::remove("/tmp/smt/__num_of_problems__");
-
-	for(int i = 0; i < p_num_of_problems; ++i){
-	  std::vector<std::string> path;
-	  for(int j = i; j < p_assertions.size(); j += p_num_of_problems){
-		path.push_back(p_assertions[j]);
-	  }
-	  p_assertions_ordered.push_back(path);
-	}	
   }
 
-
+  
   /*
    * @brief Write the Header/Options to the smt2 stream
    *
@@ -414,8 +411,10 @@ private:
    */
   void write_assertions(std::stringstream & stream, int path){
 	try {
+#ifdef DEBUG
 	  std::cout << std::endl;
 	  std::cout << "Writing File for Path: " << path << std::endl << std::endl;
+#endif
 	  if(!p_assertions_ordered.empty()){
 		stream << "; Start Assertions" << std::endl;
 	
@@ -424,10 +423,8 @@ private:
 
 		size_t current_assertion_block = 0;
 		for(std::vector<std::string>::iterator itor = current_stream.begin(); itor != current_stream.end(); ++itor){
-		  std::string tmp_string  = itor->substr(0, itor->size()-1);
-
 		  // We need to replace the value name in the assertions
-		  std::string values_replaced = update_value_name(tmp_string, 2, current_assertion_block);
+		  std::string values_replaced = update_value_name(*itor, 2, current_assertion_block);
 		  //stream << "(assert " << tmp_string << ")" << std::endl;
 		  std::vector<std::string> splited_assertions = split(values_replaced, ",");
 		  for(auto ass = splited_assertions.begin(); ass != splited_assertions.end(); ++ass){
@@ -532,8 +529,10 @@ private:
    *@brief Update the name of the select_value variables in the assertions
    */
   std::string update_value_name(std::string const & assertion, int const problems, int const group){
+#ifdef DEBUG
 	std::cout << "Group: " << group << std::endl;
 	std::cout << "Problems: " << problems << std::endl;
+#endif
 	std::string current_input = assertion;
 
 	for(int i = 0; i < problems; ++i){
@@ -546,8 +545,7 @@ private:
 			std::cout << "Input: " << current_input << std::endl;
 			std::cout << "Found Key: " << itor->reg_name << std::endl;
 			std::cout << "Replace with: " << itor->resolved_name << std::endl;
-#endif
-		  
+#endif	  
 			std::string input = current_input;
 			std::string key = itor->reg_name;
 			std::string replace_with = " " + itor->resolved_name + " ";
@@ -621,6 +619,128 @@ private:
 		std::cout << inner_itor->reg_name << " " << inner_itor->resolved_name << std::endl;
 	  }
 	}
+  }
+
+  
+  /**
+   * @brief Get all learned model assertions from the database
+   */
+  void get_learned_model_assertions (){
+	std::string const query = "SELECT smt FROM learned_models;";
+	p_active_transition = learned_assertions;
+	execute_database_call(query);
+	p_active_transition = init;
+  }
+
+
+  /*
+   * @brief Preprocess the assertions generated for the fault models to detect the error.
+   */
+  void preprocess_assertions () {
+
+	std::vector<std::string> final_assertions;
+
+	for(int i = 0; i < p_assertions.size(); ++i){
+	  if(p_assertions[i].size() == p_learned_assertions[i].size()){
+		/*
+		 * Our use case does not change the original assertions - keep them
+		 */
+		final_assertions.push_back(p_assertions[i]);
+	  } else {
+		/*
+		 * We take values from the learned assertions and 
+		 * put them into the wrong generated assertion.
+		 * Forcing the SAT solver showing up with a valid solution
+		 */
+		std::string learned =  p_assertions[i];
+		std::string compare_to =  p_learned_assertions[i];
+		 
+		std::stringstream splitter;
+		std::string word;
+
+		std::vector<std::string> learned_words;
+		std::vector<std::string> compare_words;
+
+		splitter << learned;
+		while(splitter){
+		  splitter >> word;
+		  learned_words.push_back(word);
+		  word.clear();
+		}
+		splitter.clear();
+	
+		splitter << compare_to;
+		while(splitter){
+		  splitter >> word;
+		  compare_words.push_back(word);
+		  word.clear();
+		}
+		std::vector<int> clean_learned_words_pos;
+		std::vector<std::string> clean_compare_words;
+		for(size_t j = 0; j < learned_words.size(); ++j) {
+		  if(learned_words[j].find("#x") != std::string::npos){
+			clean_learned_words_pos.push_back(j);
+		  } else if (learned_words[j].find("true") != std::string::npos){
+			clean_learned_words_pos.push_back(j);
+		  } else if (learned_words[j].find("false") != std::string::npos){
+			clean_learned_words_pos.push_back(j);
+		  }
+		}
+		
+		for(auto itor = compare_words.begin(); itor != compare_words.end(); ++itor){
+		  if(itor->find("#x") != std::string::npos){
+			clean_compare_words.push_back(*itor);
+		  } else if (itor->find("true") != std::string::npos){
+			clean_compare_words.push_back(*itor);
+		  } else if (itor->find("false") != std::string::npos){
+			clean_compare_words.push_back(*itor);
+		  }
+		}
+		
+		std::vector<std::string> new_assertion;
+		std::copy(learned_words.begin(), learned_words.end(), std::back_inserter(new_assertion));
+		
+		for (int j = 0; j < clean_learned_words_pos.size(); ++j){
+		  new_assertion[clean_learned_words_pos[j]] = clean_compare_words[j];
+		}
+		
+		std::stringstream processed_assertion;
+		for (int j = 0; j < new_assertion.size(); ++j){
+		  processed_assertion << new_assertion[j] << " ";
+		}
+
+		int pos = 0;
+		for(int i = 0; i < processed_assertion.str().size(); i++){
+		  if (processed_assertion.str()[i] == ')'){
+			pos = i;
+		  }
+		}
+
+		int open_brackets = 0;
+		int closing_brackets = 0;
+		for(int i = 0; i < processed_assertion.str().size(); ++i){
+		  if(processed_assertion.str()[i] == '('){
+			open_brackets++;
+		  } else if (processed_assertion.str()[i] == ')'){
+			closing_brackets++;
+		  }
+		}
+		
+		std::string clear_brackets;
+		if (open_brackets > closing_brackets){
+		  clear_brackets = processed_assertion.str() + ')';
+		} else if (open_brackets < closing_brackets) {
+		  clear_brackets = processed_assertion.str().substr(0, pos);
+		} else {
+		  clear_brackets = processed_assertion.str();
+		}
+
+		std::string final_assertion = clear_brackets;	
+		final_assertions.push_back(final_assertion);	
+	  }
+	}
+	
+	p_assertions_ordered.push_back(final_assertions);
   }
   
 };

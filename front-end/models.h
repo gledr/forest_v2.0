@@ -30,6 +30,7 @@
 #include "DatabaseExporter.hpp"
 #include "AllSAT.hpp"
 #include "ModelExporter.hpp"
+#include "LearnModel.hpp"
 
 #include "cmd_options.h"
 
@@ -104,5 +105,6 @@ void print_path(Path path);
 void export_allsat();
 void exec_allsat();
 void export_model();
+void learn_model();
 
 #endif /* end of include guard: _MODELS_H_ */

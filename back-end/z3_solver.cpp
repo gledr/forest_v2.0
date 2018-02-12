@@ -655,7 +655,7 @@ void Z3Solver::bt_operation(string op1, string op2, string dst, stringstream& co
 void Z3Solver::eq_operation(string op1, string op2, string dst, stringstream& content_ss){
 	if(!islinear(op1) || !islinear(op2)){set_real_value(dst, "false"); return;}
 
-		content_ss << "(= " << content(op1 ) << " " <<  content(op2 ) << ")";
+		content_ss << "(= " << content(op1 ) << " " <<  content(op2 ) << " ) ";
 }
 
 void Z3Solver::add_operation(string op1, string op2, string dst, stringstream& content_ss){

@@ -980,3 +980,10 @@ void export_model () {
   exit(0);
 
 }
+
+void learn_model(){
+  std::shared_ptr<LearnModel> learn_model(new LearnModel("/dev/shm/forest/", "/tmp/smt/"));
+  learn_model->learn_use_case();
+  
+  exit(0);
+}

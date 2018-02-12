@@ -201,23 +201,32 @@ private:
 		p_db_to_use = db_transition::db_init;
 	}
 
-	void store_model(){
-	  	std::string tmp_file = "/tmp/smt/__num_of_problems__";
-		for(auto itor = p_models.begin(); itor != p_models.end(); ++itor){
-			std::stringstream query;
-			query << "insert into models values ('" << itor->path <<"');";
-			p_db_to_use = db_transition::target_db;
-			execute_database_call(query.str());
-			p_db_to_use = db_transition::target_db;
-		}
-		if (!boost::filesystem::exists(tmp_file)){  
-		  size_t num_of_path = p_models.size();
-		  std::fstream outfile;
-		  outfile.open(tmp_file, std::ios::out);
-		  outfile << std::to_string(num_of_path);
-		  outfile.close();
-		}
+  void store_model(){
+	std::string tmp_file = "/tmp/smt/__num_of_problems__";
+	for(auto itor = p_models.begin(); itor != p_models.end(); ++itor){
+	  std::vector<std::string> single_assertions = split(itor->path, ",");
+	  for(auto inner_itor = single_assertions.begin(); inner_itor != single_assertions.end(); ++inner_itor){
+		std::stringstream query;
+		query << "insert into models values ('" << *inner_itor <<"');";
+		p_db_to_use = db_transition::target_db;
+		execute_database_call(query.str());
+		p_db_to_use = db_transition::target_db;
+	  }
 	}
+	//	std::stringstream query;
+	//query << "insert into models values ('end_use_case');";
+	//p_db_to_use = db_transition::target_db;
+	//execute_database_call(query.str());
+	//p_db_to_use = db_transition::target_db;
+		
+	if (!boost::filesystem::exists(tmp_file)){  
+	  size_t num_of_path = p_models.size();
+	  std::fstream outfile;
+	  outfile.open(tmp_file, std::ios::out);
+	  outfile << std::to_string(num_of_path);
+	  outfile.close();
+	}
+  }
 
 
 	/**
@@ -238,7 +247,9 @@ private:
 	void store_free_variables (){
 		for(auto itor = p_free_variables.begin(); itor != p_free_variables.end(); ++itor){
 			std::stringstream query;
-			query << "insert into free_variables values ('" << itor->reg_name <<"','" << itor->resolved_name << "','" << itor->type << "');";
+			query << "INSERT INTO free_variables (name, position, type) ";
+			query << "SELECT '" << itor->reg_name <<"','" << itor->resolved_name << "','" << itor->type << "' " ;
+			query << "WHERE NOT EXISTS (SELECT position FROM free_variables WHERE position='" << itor->resolved_name << "');";
 			p_db_to_use = db_transition::target_db;
 			execute_database_call(query.str());
 			p_db_to_use = db_transition::target_db;
@@ -281,6 +292,30 @@ private:
 	   ModelExporter * tmp = reinterpret_cast<ModelExporter*>(data);
 	   return tmp->__callback__(argc, argv, azColName);
 	}
+
+  /**
+   * @brief Split a string at delimiter and pack them into a vector
+   *
+   * @param str The string to split
+   * @param delim The delimiter to use
+   */
+  std::vector<std::string> split(std::string const & str, std::string const & delim) {
+	std::vector<std::string> tokens;
+	size_t prev = 0;
+	size_t pos = 0;
+
+	do
+	  {
+		pos = str.find(delim, prev);
+		if (pos == std::string::npos) pos = str.length();
+		std::string token = str.substr(prev, pos-prev);
+		if (!token.empty()) tokens.push_back(token);
+		prev = pos + delim.length();
+	  }
+	while (pos < str.length() && prev < str.length());
+
+	return tokens;
+  }
 };
 
 

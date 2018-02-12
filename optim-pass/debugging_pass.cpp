@@ -223,7 +223,7 @@ struct SelectVariables: public ModulePass {
 #ifdef DEBUG
 			errs () << "Value ID: " << in->getValueID() << "\n";
 			errs () << "Address" << in << "\n";
-#endif		
+			#endif	
 		  }
 		}
       }
