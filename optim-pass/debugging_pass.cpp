@@ -43,8 +43,8 @@
 #include <map>
 #include <set>
 
-//#define DEBUG
-//#define BLACKLIST
+#define DEBUG
+#define BLACKLIST
 
 using namespace llvm;
 using namespace std;
@@ -52,7 +52,7 @@ using namespace std;
 /*
  * Use for the communication between the insert_select_variables pass and the loop_latch_info pass
  */
-std::vector<Instruction*> BinInstructionsLoopLatch;
+std::vector<Instruction*> IgnoredInstructionsInLoop;
 
 namespace {
   /*
@@ -83,7 +83,7 @@ namespace {
 		AnalyseLoop(*i, 0);
       }
 #ifdef DEBUG
-      errs () << "Found " << BinInstructionsLoopLatch.size() << " binary statementes in loops\n";
+      errs () << "Found " << IgnoredInstructionsInLoop.size() << " to be ingored in loops\n";
 #endif
       return false;
     }
@@ -94,9 +94,29 @@ namespace {
       
       for (; I != L->getLoopLatch()->end(); ++ I){
       	if(BinaryOperator::classof(I)){
-		  BinInstructionsLoopLatch.push_back(I);
+		  IgnoredInstructionsInLoop.push_back(I);
       	}
       }
+
+	  I = L->getHeader()->begin();
+	  for(; I != L->getHeader()->end(); ++I){
+		if (ICmpInst::classof(I)){
+		  IgnoredInstructionsInLoop.push_back(I);
+		}
+	  }
+
+	  BranchInst *BI = dyn_cast<BranchInst>(L->getLoopLatch()->getTerminator());
+	  BasicBlock *next_block = BI->getSuccessor(0);
+
+	  for(auto itor = next_block->begin(); itor != next_block->end(); ++itor){
+		errs () << *itor << "\n";
+		if(ICmpInst::classof(itor)){
+		  errs () << "Is Compare\n";
+		  IgnoredInstructionsInLoop.push_back(itor);
+		}
+	  }
+	  
+	  
     }
     
   };
@@ -148,7 +168,7 @@ struct SelectVariables: public ModulePass {
   }
 
   void dump_blacklisted_lines () {
-	for(int i = 0; i < p_blacklisted_lines.size(); ++i){
+	for(size_t i = 0; i < p_blacklisted_lines.size(); ++i){
 	  errs () << p_blacklisted_lines[i] << "\n";
 	}
   }
@@ -171,7 +191,7 @@ struct SelectVariables: public ModulePass {
 			// Search in the extracted data by loop_latch_info if the binary instruction is part of a loop latch.
 			// Iff it is part of a loop latch we are not inserting select variables, since this would end up in an endless loop
 			// as the SAT solver can insert arbitrary values and the loop will never terminate
-			if(std::find(BinInstructionsLoopLatch.begin(), BinInstructionsLoopLatch.end(), in) == BinInstructionsLoopLatch.end()){
+			if(std::find(IgnoredInstructionsInLoop.begin(), IgnoredInstructionsInLoop.end(), in) == IgnoredInstructionsInLoop.end()){
 #ifdef DEBUG
 			  errs () << "No loop latch is using this\n";
 #endif
@@ -205,6 +225,11 @@ struct SelectVariables: public ModulePass {
 			errs () << "Compare Operator Detected!\n";
 			errs () << *in << "\n";
 #endif
+
+						if(std::find(IgnoredInstructionsInLoop.begin(), IgnoredInstructionsInLoop.end(), in) == IgnoredInstructionsInLoop.end()){
+#ifdef DEBUG
+			  errs () << "No loop latch is using this\n";
+#endif
 			BasicBlock::iterator insertpos = in; insertpos++;
 			
 			AllocaInst* enable_ptr = new AllocaInst(Type::getInt1Ty( M.getContext() ), "select_enable", insertpos);
@@ -219,11 +244,16 @@ struct SelectVariables: public ModulePass {
 			// ends up in the indtended register!
 			ReplaceAfter val_to_repl = {in, SelectInstruction };
 			values_to_replace.push_back(val_to_repl);
+						} else {
+#ifdef DEBUG
+			  errs () << "Instruction used in loop latch!\n";
+#endif
+			}
 					
 #ifdef DEBUG
 			errs () << "Value ID: " << in->getValueID() << "\n";
 			errs () << "Address" << in << "\n";
-			#endif	
+#endif	
 		  }
 		}
       }
