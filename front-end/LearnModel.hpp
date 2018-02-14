@@ -6,9 +6,7 @@
 #include <boost/filesystem.hpp>
 #include <sqlite3.h>
 
-#ifdef DEBUG
-#undef DEBUG
-#endif
+#define DEBUG
 
 class LearnModel{
 public:
@@ -238,6 +236,11 @@ private:
 		  p_db_to_use = db_transition::target_db;
 		}
 	  }
+	  std::stringstream query;
+	  query << "INSERT INTO learned_models (smt) values ('end_use_case');";
+	  p_db_to_use = db_transition::target_db;
+	  execute_database_call(query.str());
+	  p_db_to_use = db_transition::target_db;
 	}
 
 

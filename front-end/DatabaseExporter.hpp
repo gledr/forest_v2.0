@@ -11,7 +11,7 @@
 #include <regex>
 #include <map>
 
-//#define DEBUG
+#define DEBUG
 
 
 /**
@@ -30,9 +30,9 @@ public:
   DatabaseExporter(std::string path, int const errors){
 	p_db = 0;
 	p_errors = errors;
+	p_use_cases = 0;
 	p_path = path;
 	p_active_transition = init;
-	p_num_of_problems = 0;
   }
 
   /**
@@ -75,6 +75,7 @@ public:
   void collect_data(){
 	this->get_model_assertions();
 	this->get_learned_model_assertions();
+	this->clear_assertions();
 	this->preprocess_assertions();
 	this->get_free_variables();
 	this->split_free_variables();
@@ -255,10 +256,9 @@ private:
   std::vector<std::string> p_assertions;
   std::vector<std::string> p_learned_assertions;
   std::string p_root_dir;
-  size_t p_num_of_problems;
   std::vector<std::vector<std::string> > p_assertions_ordered;
   int p_errors;
-
+  int p_use_cases;
   /**
    * @brief Dummy function for database transactions
    *
@@ -302,8 +302,7 @@ private:
 	std::vector<FreeVariables> new_variables;
 	
 	 if(!p_free_variables.empty()) {
-		int num_of_assertions = p_assertions_ordered.front().size();
-		for(int i = 0 ;i < num_of_assertions; ++i){
+		for(int i = 0 ;i < p_use_cases; ++i){
 		  for(int j = 0; j < p_free_variables.size(); ++j){
 			std::string name = p_free_variables[j].resolved_name;
 			std::string type = p_free_variables[j].type;
@@ -420,17 +419,25 @@ private:
 	
 		// #1 Write the assertions gained from the database
 		std::vector<std::string> current_stream = p_assertions_ordered[path];
+		std::cout << "gledr" << std::endl;
+		std::cout << current_stream.size() << std::endl;
 
 		size_t current_assertion_block = 0;
+		size_t assertion_counter = 0;
 		for(std::vector<std::string>::iterator itor = current_stream.begin(); itor != current_stream.end(); ++itor){
 		  // We need to replace the value name in the assertions
-		  std::string values_replaced = update_value_name(*itor, 2, current_assertion_block);
+		  int assertions_per_use_case = p_assertions.size()/p_use_cases;
+		  std::string values_replaced = update_value_name(*itor, assertions_per_use_case, current_assertion_block);
 		  //stream << "(assert " << tmp_string << ")" << std::endl;
 		  std::vector<std::string> splited_assertions = split(values_replaced, ",");
 		  for(auto ass = splited_assertions.begin(); ass != splited_assertions.end(); ++ass){
 			stream << "(assert " << *ass << ")" << std::endl;
 		  }
-		  current_assertion_block++;
+		  assertion_counter++;
+		  if(assertion_counter == (p_assertions.size()/p_use_cases)){
+			assertion_counter = 0;
+			current_assertion_block++;
+		  }
 		}
 
 		for(auto itor = p_free_variables_replace.begin(); itor != p_free_variables_replace.end(); ++itor){
@@ -531,16 +538,12 @@ private:
   std::string update_value_name(std::string const & assertion, int const problems, int const group){
 #ifdef DEBUG
 	std::cout << "Group: " << group << std::endl;
-	std::cout << "Problems: " << problems << std::endl;
 #endif
 	std::string current_input = assertion;
 
-	for(int i = 0; i < problems; ++i){
-	  int cnt = 0;
-
 	  for(auto itor = p_free_variables_replace[group].begin(); itor != p_free_variables_replace[group].end(); ++itor){
 		for(int i = 0; i < problems; ++i){
-		  if(current_input.find(itor->reg_name) != std::string::npos && itor->used < problems){
+		  if(current_input.find(itor->reg_name) != std::string::npos){
 #ifdef DEBUG
 			std::cout << "Input: " << current_input << std::endl;
 			std::cout << "Found Key: " << itor->reg_name << std::endl;
@@ -552,14 +555,8 @@ private:
 			std::string regex_pattern = " " + key + " ";
 			std::regex reg(regex_pattern);
 			current_input = std::regex_replace(input, reg, replace_with);
-			itor->used++;
-		  }
-		  cnt++;
-		  if(cnt == p_select_variables.size()){
-			break;
 		  }
 		}
-	  }
 	}
 #ifdef DEBUG
 	std::cout << "Output: " << current_input << std::endl;
@@ -742,7 +739,39 @@ private:
 	
 	p_assertions_ordered.push_back(final_assertions);
   }
-  
+
+  void clear_assertions () {
+	size_t learned_use_cases = 0;
+	std::string keyword = "end_use_case";
+	std::vector<std::string> clear_learned_assertions;
+	for(auto itor = p_learned_assertions.begin(); itor != p_learned_assertions.end(); ++itor){
+	  if(itor->compare(keyword) != 0){
+		clear_learned_assertions.push_back(*itor);
+	  } else {
+		learned_use_cases++;
+	  }
+	}
+	p_learned_assertions.clear();
+	std::copy(clear_learned_assertions.begin(), clear_learned_assertions.end(), std::back_inserter(p_learned_assertions));
+
+	size_t model_use_cases = 0;
+	std::vector<std::string> clear_model_assertions;
+	for(auto itor = p_assertions.begin(); itor != p_assertions.end(); ++itor){
+	  if (itor->compare(keyword) != 0){
+		clear_model_assertions.push_back(*itor);
+	  } else {
+		model_use_cases++;
+	  }
+	}
+
+	p_assertions.clear();
+	std::copy(clear_model_assertions.begin(), clear_model_assertions.end(), std::back_inserter(p_assertions));
+
+	p_use_cases = model_use_cases;
+	assert (model_use_cases == learned_use_cases);
+	std::cout << "Found " << model_use_cases << " use cases" << std::endl;
+	
+  }
 };
 
 #endif /* DATABASEEXPORTER_HPP_ */

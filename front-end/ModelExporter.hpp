@@ -34,9 +34,7 @@ public:
 
 	static void delete_db(){
 		std::string path = "/tmp/smt/database.db";
-		std::string tmp_file = "/tmp/smt/__num_of_problems__";
 		boost::filesystem::remove(path);
-		boost::filesystem::remove(tmp_file);	
 	}
 
 	/**
@@ -202,7 +200,6 @@ private:
 	}
 
   void store_model(){
-	std::string tmp_file = "/tmp/smt/__num_of_problems__";
 	for(auto itor = p_models.begin(); itor != p_models.end(); ++itor){
 	  std::vector<std::string> single_assertions = split(itor->path, ",");
 	  for(auto inner_itor = single_assertions.begin(); inner_itor != single_assertions.end(); ++inner_itor){
@@ -213,19 +210,11 @@ private:
 		p_db_to_use = db_transition::target_db;
 	  }
 	}
-	//	std::stringstream query;
-	//query << "insert into models values ('end_use_case');";
-	//p_db_to_use = db_transition::target_db;
-	//execute_database_call(query.str());
-	//p_db_to_use = db_transition::target_db;
-		
-	if (!boost::filesystem::exists(tmp_file)){  
-	  size_t num_of_path = p_models.size();
-	  std::fstream outfile;
-	  outfile.open(tmp_file, std::ios::out);
-	  outfile << std::to_string(num_of_path);
-	  outfile.close();
-	}
+	std::stringstream query;
+	query << "insert into models (smt) values ('end_use_case');";
+	p_db_to_use = db_transition::target_db;
+	execute_database_call(query.str());
+	p_db_to_use = db_transition::target_db;
   }
 
 
